@@ -1,0 +1,30 @@
+{
+  "name": "radiokit-toolkit-playback",
+  "version": "0.0.10",
+  "description": "RadioKit Toolkit for playing back audio content",
+  "main": "build/toolkit-js-playback.js",
+  "scripts": {
+    "build": "gulp build",
+    "spec": "gulp spec"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@bitbucket.org:radiokit/toolkit-js-playback.git"
+  },
+  "contributors": [
+    "Marcin Lewandowski <marcin@radiokit.org>"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "radiokit-api": "^0.1.19",
+    "moment": "^2.14.1"
+  },
+  "devDependencies": {
+    "browserify": "^9.0.8",
+    "chai": "^3.5.0",
+    "gulp": "^3.8.11",
+    "gulp-mocha": "^3.0.1",
+    "gulp-typescript": "^3.1.2",
+    "typescript": "^2.0.6"
+  }
+}
