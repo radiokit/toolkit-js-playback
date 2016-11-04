@@ -16,8 +16,9 @@
   ],
   "license": "MIT",
   "dependencies": {
-    "radiokit-api": "^0.1.19",
-    "moment": "^2.14.1"
+    "es6-promise": "^4.0.5",
+    "moment": "^2.14.1",
+    "radiokit-api": "^0.1.19"
   },
   "devDependencies": {
     "browserify": "^9.0.8",

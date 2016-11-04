@@ -13,12 +13,11 @@
         "removeComments": true,
         "noLib": false,
         "preserveConstEnums": true,
-        "suppressImplicitAnyIndexErrors": true
+        "suppressImplicitAnyIndexErrors": true,
+        "lib": [ "es2015.promise"]
     },
     "exclude": [
         "node_modules",
-        "typings/browser",
-        "typings/browser.d.ts"
     ],
     "compileOnSave": true,
     "buildOnSave": false,
