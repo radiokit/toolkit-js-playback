@@ -15,6 +15,10 @@ declare class SyncError implements Error {
  * Use it instead of relying on browser's clock. 
  *
  * Do not instantiate it directly, use provided factory makeAsyncForSure() instead.
+ *
+ * TODO:
+ * 
+ * - handle super corner case when someone changes clock setting during runtime
  */
 export class Sync extends Base {
   private offset: number;
@@ -56,7 +60,13 @@ export class Sync extends Base {
   }
 
 
-
+  /**
+   * Constructs new Sync clock. 
+   *
+   * Passed serverDate argument is a RadioKit server time as UNIX timestamp.
+   *
+   * Do not use this constructor directly, use Sync.makeAsync() factory instead.
+   */ 
   constructor(serverDate: number) {
     super();
     this.offset = serverDate - Date.now(); // in milliseconds
