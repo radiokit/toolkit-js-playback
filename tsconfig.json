@@ -4,7 +4,6 @@
         "module": "commonjs",
         "moduleResolution": "node",
         "isolatedModules": false,
-        "jsx": "react",
         "experimentalDecorators": true,
         "emitDecoratorMetadata": true,
         "declaration": false,
@@ -14,10 +13,10 @@
         "noLib": false,
         "preserveConstEnums": true,
         "suppressImplicitAnyIndexErrors": true,
-        "lib": [ "es2015.promise"]
+        "lib": [ "es5", "es2015.promise", "dom" ]
     },
     "exclude": [
-        "node_modules",
+        "node_modules"
     ],
     "compileOnSave": true,
     "buildOnSave": false,

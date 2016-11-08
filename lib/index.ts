@@ -1,5 +1,13 @@
-import ChannelPlayer from './ChannelPlayer';
+import { Channel }  from './player/Channel';
 
-module.exports = {
-  ChannelPlayer,
+const e = {
+  Player: {
+    Channel,
+  }
 };
+
+module.e = e;
+
+if(typeof(window) !== "undefined") {
+  window['RadioKitToolkitPlayback'] = e;
+}
