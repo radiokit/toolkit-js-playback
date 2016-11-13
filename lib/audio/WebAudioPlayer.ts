@@ -20,16 +20,15 @@ export class WebAudioPlayer extends Base implements IAudioPlayer {
    * Checks if WebAudio API is supported.
    */
   public static isSupported() : boolean {
-    return window.hasOwnProperty('webkitAudioContext') ||
-      window.hasOwnProperty('AudioContext');
+    return window.hasOwnProperty('AudioContext') || window.hasOwnProperty('webkitAudioContext');
   }
 
 
   private static findAudioContext() : AudioContext {
-    if(window.hasOwnProperty('webkitAudioContext')) {
-      return window['webkitAudioContext'];
-    } else if(window.hasOwnProperty('AudioContext')) {
+    if(window.hasOwnProperty('AudioContext')) {
       return window['AudioContext'];
+    } else if(window.hasOwnProperty('webkitAudioContext')) {
+      return window['webkitAudioContext'];
     } else {
       throw new Error('Unable to find AudioContext');
     }
@@ -46,9 +45,9 @@ export class WebAudioPlayer extends Base implements IAudioPlayer {
 
     this.request = new XMLHttpRequest();
     this.request.responseType = 'arraybuffer';
-    this.request.addEventListener('load', this.onRequestLoad);
-    this.request.addEventListener('error', this.onRequestError);
-    this.request.addEventListener('abort', this.onRequestAbort);
+    this.request.addEventListener('load', this.__onRequestLoad);
+    this.request.addEventListener('error', this.__onRequestError);
+    this.request.addEventListener('abort', this.__onRequestAbort);
   }
 
 
@@ -56,6 +55,7 @@ export class WebAudioPlayer extends Base implements IAudioPlayer {
     this.debug("Prepare");
 
     this.request.open('GET', this.source.getOpus(), true);
+    this.request.responseType = 'arraybuffer';
     this.request.send();
   }
 
@@ -72,23 +72,28 @@ export class WebAudioPlayer extends Base implements IAudioPlayer {
   }
 
 
-  private onRequestLoad(event) : void {
-    this.debug("Request Load");
-    this.audioContext.decodeAudioData(this.request.response, this.onAudioContextDecode);
+  protected _loggerTag() : string {
+    return this['constructor']['name'];
   }
 
 
-  private onRequestError(event) : void {
+  private __onRequestLoad(event) : void {
+    this.debug("Request Load");
+    this.audioContext.decodeAudioData(this.request.response, this.__onAudioContextDecode);
+  }
+
+
+  private __onRequestError(event) : void {
     this.warn("Request Error");
   }
 
 
-  private onRequestAbort(event) : void {
+  private __onRequestAbort(event) : void {
     this.warn("Request Abort");
   }
 
 
-  private onAudioContextDecode(buffer) : void {
+  private __onAudioContextDecode(buffer) : void {
     this.debug("Audio Decode");
     // TODO
   }

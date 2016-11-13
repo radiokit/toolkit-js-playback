@@ -1,8 +1,8 @@
-import { Channel }  from './player/Channel';
+import { Player }  from './channel/Player';
 
 const e = {
-  Player: {
-    Channel,
+  Channel: {
+    Player,
   }
 };
 

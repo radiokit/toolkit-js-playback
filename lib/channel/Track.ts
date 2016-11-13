@@ -10,10 +10,9 @@ export class Track extends Base {
   private __cueOutAt: Date;
   private __fadeInAt?: Date;
   private __fadeOutAt?: Date;
-  private __startNextAt?: Date;
 
 
-  constructor(id: string, fileId: string, cueInAt: Date, cueOutAt: Date, cueOffset: number, fadeInAt?: Date, fadeOutAt?: Date, startNextAt?: Date) {
+  constructor(id: string, fileId: string, cueInAt: Date, cueOutAt: Date, cueOffset: number, fadeInAt?: Date, fadeOutAt?: Date) {
     super();
 
     this.__id = id;
@@ -23,7 +22,16 @@ export class Track extends Base {
     this.__cueOffset = cueOffset;
     this.__fadeInAt = fadeInAt;
     this.__fadeOutAt = fadeOutAt;
-    this.__startNextAt = startNextAt;
+  }
+
+
+  public getId() : string {
+    return this.__id;
+  }
+
+
+  public getFileId() : string {
+    return this.__fileId;
   }
 
 
