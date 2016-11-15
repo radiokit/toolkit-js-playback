@@ -1,7 +1,7 @@
 import { IAudioPlayer } from './IAudioPlayer';
-import { WebAudioPlayer } from './WebAudioPlayer';
 import { HTMLPlayer } from './HTMLPlayer';
-import { Source } from './Source';
+import { Track } from '../channel/Track';
+import { SyncClock } from '../clock/SyncClock';
 
 
 /**
@@ -10,16 +10,9 @@ import { Source } from './Source';
  */
 export class Factory {
   /**
-   * Instantiates an audio player for given source.
-   *
-   * Performs browser capabilities test and selects the best player available.
+   * Instantiates an audio player for given track.
    */
-  public static make(source: Source) : IAudioPlayer {
-    if(WebAudioPlayer.isSupported()) {
-      return new WebAudioPlayer(source);
-
-    } else {
-      return new HTMLPlayer(source);
-    }
+  public static makeFromTrack(track: Track, clock: SyncClock) : IAudioPlayer {
+    return new HTMLPlayer(track, clock);
   }
 }

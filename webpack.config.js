@@ -5,7 +5,7 @@ module.exports = {
         filename: 'radiokit-toolkit-playback.js'
     },
     resolve: {
-        extensions: ['', '.js', '.ts']
+        extensions: ['', '.ts']
     },
     devtool: 'source-map', // if we want a source map
     module: {

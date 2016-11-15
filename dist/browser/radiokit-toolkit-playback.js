@@ -44,38 +44,20 @@
 /* 0 */
 /***/ function(module, exports, __webpack_require__) {
 
-	/* WEBPACK VAR INJECTION */(function(module) {"use strict";
-	var Player_1 = __webpack_require__(2);
-	var e = {
+	"use strict";
+	var Player_1 = __webpack_require__(1);
+	exports.e = {
 	    Channel: {
 	        Player: Player_1.Player,
 	    }
 	};
-	module.e = e;
 	if (typeof (window) !== "undefined") {
-	    window['RadioKitToolkitPlayback'] = e;
+	    window['RadioKitToolkitPlayback'] = exports.e;
 	}
-	
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(1)(module)))
+
 
 /***/ },
 /* 1 */
-/***/ function(module, exports) {
-
-	module.exports = function(module) {
-		if(!module.webpackPolyfill) {
-			module.deprecate = function() {};
-			module.paths = [];
-			// module.parent = undefined by default
-			module.children = [];
-			module.webpackPolyfill = 1;
-		}
-		return module;
-	}
-
-
-/***/ },
-/* 2 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -84,20 +66,20 @@
 	    function __() { this.constructor = d; }
 	    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 	};
-	var Base_1 = __webpack_require__(3);
-	var SyncClock_1 = __webpack_require__(4);
-	var Playlist_1 = __webpack_require__(5);
-	var AudioManager_1 = __webpack_require__(7);
+	var Base_1 = __webpack_require__(2);
+	var SyncClock_1 = __webpack_require__(3);
+	var Playlist_1 = __webpack_require__(4);
+	var AudioManager_1 = __webpack_require__(6);
 	var Player = (function (_super) {
 	    __extends(Player, _super);
 	    function Player(channelId, accessToken) {
-	        var _this = _super.call(this) || this;
-	        _this.__fetchTimeoutId = 0;
-	        _this.__started = false;
-	        _this.__channelId = channelId;
-	        _this.__accessToken = accessToken;
-	        _this.__audioManager = new AudioManager_1.AudioManager();
-	        return _this;
+	        _super.call(this);
+	        this.__fetchTimeoutId = 0;
+	        this.__clock = null;
+	        this.__started = false;
+	        this.__channelId = channelId;
+	        this.__accessToken = accessToken;
+	        this.__audioManager = new AudioManager_1.AudioManager();
 	    }
 	    Player.prototype.start = function () {
 	        this.__startFetching();
@@ -109,6 +91,9 @@
 	        this.__audioManager.cleanup();
 	        this.__started = false;
 	        return this;
+	    };
+	    Player.prototype.isStarted = function () {
+	        return this.__started;
 	    };
 	    Player.prototype._loggerTag = function () {
 	        return this['constructor']['name'] + " " + this.__channelId;
@@ -124,16 +109,38 @@
 	    };
 	    Player.prototype.__fetchOnce = function () {
 	        var _this = this;
-	        this.info("Fetch: Synchronizing clock...");
-	        var promise = new Promise(function (resolve, reject) {
-	            SyncClock_1.SyncClock.makeAsync()
-	                .catch(function (error) {
-	                _this.warn("Fetch error: Unable to sync clock (" + error.message + ")");
-	                reject(new Error("Unable to sync clock (" + error.message + ")"));
-	            }).then(function (clock) {
-	                _this.debug("Fetch: Synchronized clock");
+	        if (this.__clock === null) {
+	            this.debug("Fetch: Synchronizing clock...");
+	            var promise = new Promise(function (resolve, reject) {
+	                SyncClock_1.SyncClock.makeAsync()
+	                    .catch(function (error) {
+	                    _this.warn("Fetch error: Unable to sync clock (" + error.message + ")");
+	                    reject(new Error("Unable to sync clock (" + error.message + ")"));
+	                }).then(function (clock) {
+	                    _this.debug("Fetch: Synchronized clock");
+	                    _this.__clock = clock;
+	                    console.log(clock);
+	                    _this.debug("Fetch: Fetching playlist...");
+	                    Playlist_1.Playlist.fetchAsync(_this.__channelId, _this.__accessToken, clock)
+	                        .catch(function (error) {
+	                        _this.warn("Fetch error: Unable to fetch playlist (" + error.message + ")");
+	                        reject(new Error("Unable to fetch playlist (" + error.message + ")"));
+	                    })
+	                        .then(function (playlist) {
+	                        _this.debug("Fetch: Done");
+	                        if (_this.__started) {
+	                            _this.__audioManager.update(playlist, clock);
+	                        }
+	                        resolve(playlist);
+	                    });
+	                });
+	            });
+	            return promise;
+	        }
+	        else {
+	            var promise = new Promise(function (resolve, reject) {
 	                _this.debug("Fetch: Fetching playlist...");
-	                Playlist_1.Playlist.fetchAsync(_this.__channelId, _this.__accessToken, clock)
+	                Playlist_1.Playlist.fetchAsync(_this.__channelId, _this.__accessToken, _this.__clock)
 	                    .catch(function (error) {
 	                    _this.warn("Fetch error: Unable to fetch playlist (" + error.message + ")");
 	                    reject(new Error("Unable to fetch playlist (" + error.message + ")"));
@@ -141,13 +148,13 @@
 	                    .then(function (playlist) {
 	                    _this.debug("Fetch: Done");
 	                    if (_this.__started) {
-	                        _this.__audioManager.update(playlist, clock);
+	                        _this.__audioManager.update(playlist, _this.__clock);
 	                    }
 	                    resolve(playlist);
 	                });
 	            });
-	        });
-	        return promise;
+	            return promise;
+	        }
 	    };
 	    Player.prototype.__fetchOnceAndRepeat = function () {
 	        var _this = this;
@@ -176,7 +183,7 @@
 
 
 /***/ },
-/* 3 */
+/* 2 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -203,7 +210,7 @@
 
 
 /***/ },
-/* 4 */
+/* 3 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -212,14 +219,13 @@
 	    function __() { this.constructor = d; }
 	    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 	};
-	var Base_1 = __webpack_require__(3);
+	var Base_1 = __webpack_require__(2);
 	var SyncClock = (function (_super) {
 	    __extends(SyncClock, _super);
 	    function SyncClock(serverDate) {
-	        var _this = _super.call(this) || this;
-	        _this.__offset = serverDate - Date.now();
-	        _this.debug("Constructed sync clock (offset = " + _this.__offset + " ms}");
-	        return _this;
+	        _super.call(this);
+	        this.__offset = serverDate - Date.now();
+	        this.debug("Synchronized clock: offset = " + this.__offset + " ms");
 	    }
 	    SyncClock.makeAsync = function () {
 	        var promise = new Promise(function (resolve, reject) {
@@ -262,11 +268,11 @@
 
 
 /***/ },
-/* 5 */
+/* 4 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
-	var Track_1 = __webpack_require__(6);
+	var Track_1 = __webpack_require__(5);
 	var Playlist = (function () {
 	    function Playlist(tracks) {
 	        this.__tracks = tracks;
@@ -340,7 +346,7 @@
 
 
 /***/ },
-/* 6 */
+/* 5 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -349,19 +355,18 @@
 	    function __() { this.constructor = d; }
 	    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 	};
-	var Base_1 = __webpack_require__(3);
+	var Base_1 = __webpack_require__(2);
 	var Track = (function (_super) {
 	    __extends(Track, _super);
 	    function Track(id, fileId, cueInAt, cueOutAt, cueOffset, fadeInAt, fadeOutAt) {
-	        var _this = _super.call(this) || this;
-	        _this.__id = id;
-	        _this.__fileId = fileId;
-	        _this.__cueInAt = cueInAt;
-	        _this.__cueOutAt = cueOutAt;
-	        _this.__cueOffset = cueOffset;
-	        _this.__fadeInAt = fadeInAt;
-	        _this.__fadeOutAt = fadeOutAt;
-	        return _this;
+	        _super.call(this);
+	        this.__id = id;
+	        this.__fileId = fileId;
+	        this.__cueInAt = cueInAt;
+	        this.__cueOutAt = cueOutAt;
+	        this.__cueOffset = cueOffset;
+	        this.__fadeInAt = fadeInAt;
+	        this.__fadeOutAt = fadeOutAt;
 	    }
 	    Track.prototype.getId = function () {
 	        return this.__id;
@@ -378,12 +383,11 @@
 
 
 /***/ },
-/* 7 */
+/* 6 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
-	var Factory_1 = __webpack_require__(8);
-	var Source_1 = __webpack_require__(11);
+	var Factory_1 = __webpack_require__(7);
 	var AudioManager = (function () {
 	    function AudioManager() {
 	        this.__audioPlayers = {};
@@ -397,11 +401,8 @@
 	        console.log("tracksToAdd", tracksToAdd);
 	        console.log("tracksToRemove", tracksToRemove);
 	        for (var id in tracksToAdd) {
-	            var track = tracks[id];
-	            var mp3Url = "https://essence.radiokitapp.org/api/cdn/v1.0/vault/file/" + track.getFileId() + "/variant/webbrowser-mp3";
-	            var opusUrl = "https://essence.radiokitapp.org/api/cdn/v1.0/vault/file/" + track.getFileId() + "/variant/webbrowser-opus";
-	            this.__audioPlayers[id] = Factory_1.Factory.make(new Source_1.Source(mp3Url, opusUrl));
-	            this.__audioPlayers[id].prepare();
+	            this.__audioPlayers[id] = Factory_1.Factory.makeFromTrack(tracks[id], clock);
+	            this.__audioPlayers[id].play();
 	        }
 	    };
 	    AudioManager.prototype.cleanup = function () {
@@ -424,22 +425,16 @@
 
 
 /***/ },
-/* 8 */
+/* 7 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
-	var WebAudioPlayer_1 = __webpack_require__(9);
-	var HTMLPlayer_1 = __webpack_require__(10);
+	var HTMLPlayer_1 = __webpack_require__(8);
 	var Factory = (function () {
 	    function Factory() {
 	    }
-	    Factory.make = function (source) {
-	        if (WebAudioPlayer_1.WebAudioPlayer.isSupported()) {
-	            return new WebAudioPlayer_1.WebAudioPlayer(source);
-	        }
-	        else {
-	            return new HTMLPlayer_1.HTMLPlayer(source);
-	        }
+	    Factory.makeFromTrack = function (track, clock) {
+	        return new HTMLPlayer_1.HTMLPlayer(track, clock);
 	    };
 	    return Factory;
 	}());
@@ -447,89 +442,18 @@
 
 
 /***/ },
-/* 9 */
-/***/ function(module, exports, __webpack_require__) {
-
-	"use strict";
-	var __extends = (this && this.__extends) || function (d, b) {
-	    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-	    function __() { this.constructor = d; }
-	    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-	};
-	var Base_1 = __webpack_require__(3);
-	var WebAudioPlayer = (function (_super) {
-	    __extends(WebAudioPlayer, _super);
-	    function WebAudioPlayer(source) {
-	        var _this = _super.call(this) || this;
-	        _this.debug("Construct");
-	        _this.source = source;
-	        _this.audioContext = WebAudioPlayer.findAudioContext();
-	        _this.request = new XMLHttpRequest();
-	        _this.request.responseType = 'arraybuffer';
-	        _this.request.addEventListener('load', _this.__onRequestLoad);
-	        _this.request.addEventListener('error', _this.__onRequestError);
-	        _this.request.addEventListener('abort', _this.__onRequestAbort);
-	        return _this;
-	    }
-	    WebAudioPlayer.isSupported = function () {
-	        return window.hasOwnProperty('AudioContext') || window.hasOwnProperty('webkitAudioContext');
-	    };
-	    WebAudioPlayer.findAudioContext = function () {
-	        if (window.hasOwnProperty('AudioContext')) {
-	            return window['AudioContext'];
-	        }
-	        else if (window.hasOwnProperty('webkitAudioContext')) {
-	            return window['webkitAudioContext'];
-	        }
-	        else {
-	            throw new Error('Unable to find AudioContext');
-	        }
-	    };
-	    WebAudioPlayer.prototype.prepare = function () {
-	        this.debug("Prepare");
-	        this.request.open('GET', this.source.getOpus(), true);
-	        this.request.responseType = 'arraybuffer';
-	        this.request.send();
-	    };
-	    WebAudioPlayer.prototype.play = function () {
-	        this.debug("Play");
-	        return true;
-	    };
-	    WebAudioPlayer.prototype.stop = function () {
-	        this.debug("Stop");
-	        return true;
-	    };
-	    WebAudioPlayer.prototype._loggerTag = function () {
-	        return this['constructor']['name'];
-	    };
-	    WebAudioPlayer.prototype.__onRequestLoad = function (event) {
-	        this.debug("Request Load");
-	        this.audioContext.decodeAudioData(this.request.response, this.__onAudioContextDecode);
-	    };
-	    WebAudioPlayer.prototype.__onRequestError = function (event) {
-	        this.warn("Request Error");
-	    };
-	    WebAudioPlayer.prototype.__onRequestAbort = function (event) {
-	        this.warn("Request Abort");
-	    };
-	    WebAudioPlayer.prototype.__onAudioContextDecode = function (buffer) {
-	        this.debug("Audio Decode");
-	    };
-	    return WebAudioPlayer;
-	}(Base_1.Base));
-	exports.WebAudioPlayer = WebAudioPlayer;
-
-
-/***/ },
-/* 10 */
+/* 8 */
 /***/ function(module, exports) {
 
 	"use strict";
 	var HTMLPlayer = (function () {
-	    function HTMLPlayer(source) {
-	        this.source = source;
+	    function HTMLPlayer(track, clock) {
+	        this.__track = track;
+	        this.__clock = clock;
 	    }
 	    HTMLPlayer.prototype.play = function () {
+	        var mp3Url = "https://essence.radiokitapp.org/api/cdn/v1.0/vault/file/" + this.__track.getFileId() + "/variant/webbrowser-mp3";
+	        var opusUrl = "https://essence.radiokitapp.org/api/cdn/v1.0/vault/file/" + this.__track.getFileId() + "/variant/webbrowser-opus";
 	        return true;
 	    };
 	    HTMLPlayer.prototype.stop = function () {
@@ -538,27 +462,6 @@
 	    return HTMLPlayer;
 	}());
 	exports.HTMLPlayer = HTMLPlayer;
-
-
-/***/ },
-/* 11 */
-/***/ function(module, exports) {
-
-	"use strict";
-	var Source = (function () {
-	    function Source(mp3, opus) {
-	        this.mp3 = mp3;
-	        this.opus = opus;
-	    }
-	    Source.prototype.getOpus = function () {
-	        return this.opus;
-	    };
-	    Source.prototype.getMp3 = function () {
-	        return this.mp3;
-	    };
-	    return Source;
-	}());
-	exports.Source = Source;
 
 
 /***/ }

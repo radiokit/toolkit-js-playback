@@ -1,5 +1,4 @@
 import { Factory } from './Factory';
-import { Source } from './Source';
 import { IAudioPlayer } from './IAudioPlayer';
 import { Playlist } from '../channel/Playlist';
 import { SyncClock } from '../clock/SyncClock';
@@ -20,6 +19,13 @@ export class AudioManager {
   }
 
 
+  /**
+   * Updates list of audio players to match given playlist.
+   *
+   * It performs diff on list of existing players and new playlist, so it
+   * only adds new tracks, removes old ones but do not touch these that
+   * are supposed to be currently playing.
+   */
   public update(playlist: Playlist, clock: SyncClock) : void {
     const tracks = playlist.getTracks();
 
@@ -32,19 +38,30 @@ export class AudioManager {
     const tracksToAdd = this.__diff(tracks, this.__audioPlayers);
     const tracksToRemove = this.__diff(this.__audioPlayers, tracks);
 
-    console.log("tracksToAdd", tracksToAdd);
-    console.log("tracksToRemove", tracksToRemove);
-
     for(let id in tracksToAdd) {
-      // FIXME is source obsolete? can't we pass Track directly?
-      this.__audioPlayers[id] = Factory.make(Source.makeFromTrack(tracks[id]));
-      this.__audioPlayers[id].prepare(); // FIXME
+      this.__audioPlayers[id] = Factory.makeFromTrack(tracks[id], clock);
+      this.__audioPlayers[id].play();
+    }
+
+    for(let id in tracksToRemove) {
+      this.__removeAudioPlayer(id);
     }
   }
 
 
+  /**
+   * Stops all playback and removes associated audio players.
+   */
   public cleanup() : void {
-    // TODO
+    for(let id in this.__audioPlayers) {
+      this.__removeAudioPlayer(id);
+    }
+  }
+
+
+  private __removeAudioPlayer(id: string) {
+    this.__audioPlayers[id].stop();
+    delete this.__audioPlayers[id];
   }
 
 

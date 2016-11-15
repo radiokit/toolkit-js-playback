@@ -13,7 +13,7 @@ export class Player extends Base {
   private __fetchTimeoutId: number = 0;
   private __audioManager:   AudioManager;
   private __started:        boolean;
-
+  private __clock?:         SyncClock = null;
 
   constructor(channelId: string, accessToken: string) {
     super();
@@ -64,35 +64,59 @@ export class Player extends Base {
 
 
   private __fetchOnce() : Promise<Playlist> {
-    this.info("Fetch: Synchronizing clock...");
-    const promise = new Promise<Playlist>((resolve: any, reject: any) => {
-      SyncClock.makeAsync()
-        .catch((error) => {
-          this.warn(`Fetch error: Unable to sync clock (${error.message})`);
-          reject(new Error(`Unable to sync clock (${error.message})`));
+    if(this.__clock === null) {
+      this.debug("Fetch: Synchronizing clock...");
+      const promise = new Promise<Playlist>((resolve: any, reject: any) => {
+        SyncClock.makeAsync()
+          .catch((error) => {
+            this.warn(`Fetch error: Unable to sync clock (${error.message})`);
+            reject(new Error(`Unable to sync clock (${error.message})`));
 
-        }).then((clock) => {
-          this.debug("Fetch: Synchronized clock");
+          }).then((clock) => {
+            this.debug("Fetch: Synchronized clock");
+            this.__clock = clock;
+            console.log(clock);
 
-          this.debug("Fetch: Fetching playlist...");
-          Playlist.fetchAsync(this.__channelId, this.__accessToken, clock)
-            .catch((error) => {
-              this.warn(`Fetch error: Unable to fetch playlist (${error.message})`);
-              reject(new Error(`Unable to fetch playlist (${error.message})`));
-            })
-            .then((playlist) => {
-              this.debug("Fetch: Done");
+            this.debug("Fetch: Fetching playlist...");
+            Playlist.fetchAsync(this.__channelId, this.__accessToken, clock)
+              .catch((error) => {
+                this.warn(`Fetch error: Unable to fetch playlist (${error.message})`);
+                reject(new Error(`Unable to fetch playlist (${error.message})`));
+              })
+              .then((playlist) => {
+                this.debug("Fetch: Done");
 
-              if(this.__started) {
-                this.__audioManager.update(playlist, clock);
-              }
+                if(this.__started) {
+                  this.__audioManager.update(playlist, clock);
+                }
 
-              resolve(playlist);
-            });
-        });
-    });
+                resolve(playlist);
+              });
+          });
+      });
+      return promise;
 
-    return promise;
+    } else {
+      const promise = new Promise<Playlist>((resolve: any, reject: any) => {
+        this.debug("Fetch: Fetching playlist...");
+        Playlist.fetchAsync(this.__channelId, this.__accessToken, this.__clock)
+          .catch((error) => {
+            this.warn(`Fetch error: Unable to fetch playlist (${error.message})`);
+            reject(new Error(`Unable to fetch playlist (${error.message})`));
+          })
+          .then((playlist) => {
+            this.debug("Fetch: Done");
+
+            if(this.__started) {
+              this.__audioManager.update(playlist, this.__clock);
+            }
+
+            resolve(playlist);
+          });
+      });
+
+      return promise;
+    }
   }
 
 

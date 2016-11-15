@@ -39,6 +39,7 @@ export class SyncClock extends Base {
         reject(new Error(`Unable to synchronize clock: Timeout`));
       }
 
+      // TODO include request duration while computing offset
       xhr.onreadystatechange = function() {
         if(xhr.readyState === 4) {
           if(xhr.status === 200) {
@@ -69,7 +70,7 @@ export class SyncClock extends Base {
     super();
     this.__offset = serverDate - Date.now(); // in milliseconds
 
-    this.debug(`Constructed sync clock (offset = ${this.__offset} ms}`);
+    this.debug(`Synchronized clock: offset = ${this.__offset} ms`);
   }
 
 

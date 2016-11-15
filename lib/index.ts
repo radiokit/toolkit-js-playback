@@ -1,13 +1,15 @@
 import { Player }  from './channel/Player';
 
-const e = {
-  Channel: {
-    Player,
-  }
+export const Channel = {
+  Player,
 };
 
-module.e = e;
 
+// TODO remove
 if(typeof(window) !== "undefined") {
-  window['RadioKitToolkitPlayback'] = e;
+  window['RadioKitToolkitPlayback'] = {
+    Channel: {
+      Player,
+    }
+  };
 }
