@@ -46,13 +46,15 @@
 
 	"use strict";
 	var Player_1 = __webpack_require__(1);
-	exports.e = {
-	    Channel: {
-	        Player: Player_1.Player,
-	    }
+	exports.Channel = {
+	    Player: Player_1.Player,
 	};
 	if (typeof (window) !== "undefined") {
-	    window['RadioKitToolkitPlayback'] = exports.e;
+	    window['RadioKitToolkitPlayback'] = {
+	        Channel: {
+	            Player: Player_1.Player,
+	        }
+	    };
 	}
 
 
@@ -68,14 +70,15 @@
 	};
 	var Base_1 = __webpack_require__(2);
 	var SyncClock_1 = __webpack_require__(3);
-	var Playlist_1 = __webpack_require__(4);
-	var AudioManager_1 = __webpack_require__(6);
+	var PlaylistFetcher_1 = __webpack_require__(4);
+	var AudioManager_1 = __webpack_require__(7);
 	var Player = (function (_super) {
 	    __extends(Player, _super);
 	    function Player(channelId, accessToken) {
 	        _super.call(this);
 	        this.__fetchTimeoutId = 0;
 	        this.__clock = null;
+	        this.__playlistFetcher = null;
 	        this.__started = false;
 	        this.__channelId = channelId;
 	        this.__accessToken = accessToken;
@@ -113,56 +116,49 @@
 	            this.debug("Fetch: Synchronizing clock...");
 	            var promise = new Promise(function (resolve, reject) {
 	                SyncClock_1.SyncClock.makeAsync()
+	                    .then(function (clock) {
+	                    _this.debug("Fetch: Synchronized clock");
+	                    _this.__clock = clock;
+	                    _this.__playlistFetcher = new PlaylistFetcher_1.PlaylistFetcher(_this.__channelId, _this.__accessToken, clock);
+	                    return _this.__fetchPlaylist(resolve, reject);
+	                })
 	                    .catch(function (error) {
 	                    _this.warn("Fetch error: Unable to sync clock (" + error.message + ")");
 	                    reject(new Error("Unable to sync clock (" + error.message + ")"));
-	                }).then(function (clock) {
-	                    _this.debug("Fetch: Synchronized clock");
-	                    _this.__clock = clock;
-	                    console.log(clock);
-	                    _this.debug("Fetch: Fetching playlist...");
-	                    Playlist_1.Playlist.fetchAsync(_this.__channelId, _this.__accessToken, clock)
-	                        .catch(function (error) {
-	                        _this.warn("Fetch error: Unable to fetch playlist (" + error.message + ")");
-	                        reject(new Error("Unable to fetch playlist (" + error.message + ")"));
-	                    })
-	                        .then(function (playlist) {
-	                        _this.debug("Fetch: Done");
-	                        if (_this.__started) {
-	                            _this.__audioManager.update(playlist, clock);
-	                        }
-	                        resolve(playlist);
-	                    });
 	                });
 	            });
 	            return promise;
 	        }
 	        else {
 	            var promise = new Promise(function (resolve, reject) {
-	                _this.debug("Fetch: Fetching playlist...");
-	                Playlist_1.Playlist.fetchAsync(_this.__channelId, _this.__accessToken, _this.__clock)
-	                    .catch(function (error) {
-	                    _this.warn("Fetch error: Unable to fetch playlist (" + error.message + ")");
-	                    reject(new Error("Unable to fetch playlist (" + error.message + ")"));
-	                })
-	                    .then(function (playlist) {
-	                    _this.debug("Fetch: Done");
-	                    if (_this.__started) {
-	                        _this.__audioManager.update(playlist, _this.__clock);
-	                    }
-	                    resolve(playlist);
-	                });
+	                _this.__fetchPlaylist(resolve, reject);
 	            });
 	            return promise;
 	        }
 	    };
+	    Player.prototype.__fetchPlaylist = function (resolve, reject) {
+	        var _this = this;
+	        this.debug("Fetch: Fetching playlist...");
+	        this.__playlistFetcher.fetchAsync()
+	            .then(function (playlist) {
+	            _this.debug("Fetch: Done");
+	            resolve(playlist);
+	        })
+	            .catch(function (error) {
+	            _this.warn("Fetch error: Unable to fetch playlist (" + error.message + ")");
+	            reject(new Error("Unable to fetch playlist (" + error.message + ")"));
+	        });
+	    };
 	    Player.prototype.__fetchOnceAndRepeat = function () {
 	        var _this = this;
 	        this.__fetchOnce()
-	            .catch(function (error) {
+	            .then(function (playlist) {
+	            if (_this.__started) {
+	                _this.__audioManager.update(playlist, _this.__clock);
+	            }
 	            _this.__scheduleNextFetch();
 	        })
-	            .then(function (playlist) {
+	            .catch(function (error) {
 	            _this.__scheduleNextFetch();
 	        });
 	    };
@@ -272,14 +268,17 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
-	var Track_1 = __webpack_require__(5);
-	var Playlist = (function () {
-	    function Playlist(tracks) {
-	        this.__tracks = tracks;
+	var Playlist_1 = __webpack_require__(5);
+	var PlaylistFetcher = (function () {
+	    function PlaylistFetcher(channelId, accessToken, clock) {
+	        this.__clock = clock;
+	        this.__channelId = channelId;
+	        this.__accessToken = accessToken;
 	    }
-	    Playlist.fetchAsync = function (channelId, accessToken, clock) {
+	    PlaylistFetcher.prototype.fetchAsync = function () {
+	        var _this = this;
 	        var promise = new Promise(function (resolve, reject) {
-	            var now = clock.nowAsTimestamp();
+	            var now = _this.__clock.nowAsTimestamp();
 	            var xhr = new XMLHttpRequest();
 	            var url = 'https://plumber.radiokitapp.org/api/rest/v1.0/media/input/file/radiokit/vault' +
 	                '?a[]=id' +
@@ -291,11 +290,11 @@
 	                '&a[]=fade_in_at' +
 	                '&a[]=fade_out_at' +
 	                '&s[]=cue%20' + encodeURIComponent(new Date(now).toISOString()) + '%2020%20600' +
-	                '&c[references][]=deq%20broadcast_channel_id%20' + encodeURIComponent(channelId) +
+	                '&c[references][]=deq%20broadcast_channel_id%20' + encodeURIComponent(_this.__channelId) +
 	                '&o[]=cue_in_at%20asc';
 	            xhr.open('GET', url, true);
 	            xhr.setRequestHeader('Cache-Control', 'no-cache, must-revalidate');
-	            xhr.setRequestHeader('Authorization', "Bearer " + accessToken);
+	            xhr.setRequestHeader('Authorization', "Bearer " + _this.__accessToken);
 	            xhr.timeout = 15000;
 	            xhr.onerror = function (e) {
 	                reject(new Error("Unable to fetch playlist: Network error (" + xhr.status + ")"));
@@ -310,7 +309,7 @@
 	                if (xhr.readyState === 4) {
 	                    if (xhr.status === 200) {
 	                        var responseAsJson = JSON.parse(xhr.responseText);
-	                        resolve(Playlist.makeFromJson(responseAsJson["data"]));
+	                        resolve(Playlist_1.Playlist.makeFromJson(responseAsJson["data"]));
 	                    }
 	                    else {
 	                        reject(new Error("Unable to fetch playlist: Unexpected response (status = " + xhr.status + ")"));
@@ -321,6 +320,21 @@
 	        });
 	        return promise;
 	    };
+	    return PlaylistFetcher;
+	}());
+	exports.PlaylistFetcher = PlaylistFetcher;
+
+
+/***/ },
+/* 5 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+	var Track_1 = __webpack_require__(6);
+	var Playlist = (function () {
+	    function Playlist(tracks) {
+	        this.__tracks = tracks;
+	    }
 	    Playlist.makeFromJson = function (data) {
 	        var tracks = {};
 	        for (var _i = 0, data_1 = data; _i < data_1.length; _i++) {
@@ -346,7 +360,7 @@
 
 
 /***/ },
-/* 5 */
+/* 6 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -383,11 +397,11 @@
 
 
 /***/ },
-/* 6 */
+/* 7 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
-	var Factory_1 = __webpack_require__(7);
+	var Factory_1 = __webpack_require__(8);
 	var AudioManager = (function () {
 	    function AudioManager() {
 	        this.__audioPlayers = {};
@@ -398,14 +412,22 @@
 	        var newIds = Object.keys(tracks);
 	        var tracksToAdd = this.__diff(tracks, this.__audioPlayers);
 	        var tracksToRemove = this.__diff(this.__audioPlayers, tracks);
-	        console.log("tracksToAdd", tracksToAdd);
-	        console.log("tracksToRemove", tracksToRemove);
 	        for (var id in tracksToAdd) {
 	            this.__audioPlayers[id] = Factory_1.Factory.makeFromTrack(tracks[id], clock);
 	            this.__audioPlayers[id].play();
 	        }
+	        for (var id in tracksToRemove) {
+	            this.__removeAudioPlayer(id);
+	        }
 	    };
 	    AudioManager.prototype.cleanup = function () {
+	        for (var id in this.__audioPlayers) {
+	            this.__removeAudioPlayer(id);
+	        }
+	    };
+	    AudioManager.prototype.__removeAudioPlayer = function (id) {
+	        this.__audioPlayers[id].stop();
+	        delete this.__audioPlayers[id];
 	    };
 	    AudioManager.prototype.__diff = function (object1, object2) {
 	        var result = {};
@@ -425,11 +447,11 @@
 
 
 /***/ },
-/* 7 */
+/* 8 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
-	var HTMLPlayer_1 = __webpack_require__(8);
+	var HTMLPlayer_1 = __webpack_require__(9);
 	var Factory = (function () {
 	    function Factory() {
 	    }
@@ -442,7 +464,7 @@
 
 
 /***/ },
-/* 8 */
+/* 9 */
 /***/ function(module, exports) {
 
 	"use strict";

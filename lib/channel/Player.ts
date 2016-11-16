@@ -1,19 +1,23 @@
 import { Base } from '../Base';
 import { SyncClock } from '../clock/SyncClock';
 import { Playlist } from '../channel/Playlist';
+import { PlaylistFetcher } from '../channel/PlaylistFetcher';
 import { AudioManager } from '../audio/AudioManager';
+
 
 /**
  * This class represents a single channel (stream) that is broadcasted from
  * RadioKit servers.
  */
 export class Player extends Base {
-  private __channelId:      string;
-  private __accessToken:    string;
-  private __fetchTimeoutId: number = 0;
-  private __audioManager:   AudioManager;
-  private __started:        boolean;
-  private __clock?:         SyncClock = null;
+  private __channelId:        string;
+  private __accessToken:      string;
+  private __fetchTimeoutId:   number = 0;
+  private __audioManager:     AudioManager;
+  private __started:          boolean;
+  private __clock?:           SyncClock = null;
+  private __playlistFetcher?: PlaylistFetcher = null;
+
 
   constructor(channelId: string, accessToken: string) {
     super();
@@ -68,64 +72,52 @@ export class Player extends Base {
       this.debug("Fetch: Synchronizing clock...");
       const promise = new Promise<Playlist>((resolve: any, reject: any) => {
         SyncClock.makeAsync()
+          .then((clock) => {
+            this.debug("Fetch: Synchronized clock");
+            this.__clock = clock;
+            this.__playlistFetcher = new PlaylistFetcher(this.__channelId, this.__accessToken, clock);
+
+            return this.__fetchPlaylist(resolve, reject);
+          })
           .catch((error) => {
             this.warn(`Fetch error: Unable to sync clock (${error.message})`);
             reject(new Error(`Unable to sync clock (${error.message})`));
-
-          }).then((clock) => {
-            this.debug("Fetch: Synchronized clock");
-            this.__clock = clock;
-            console.log(clock);
-
-            this.debug("Fetch: Fetching playlist...");
-            Playlist.fetchAsync(this.__channelId, this.__accessToken, clock)
-              .catch((error) => {
-                this.warn(`Fetch error: Unable to fetch playlist (${error.message})`);
-                reject(new Error(`Unable to fetch playlist (${error.message})`));
-              })
-              .then((playlist) => {
-                this.debug("Fetch: Done");
-
-                if(this.__started) {
-                  this.__audioManager.update(playlist, clock);
-                }
-
-                resolve(playlist);
-              });
           });
       });
       return promise;
 
     } else {
       const promise = new Promise<Playlist>((resolve: any, reject: any) => {
-        this.debug("Fetch: Fetching playlist...");
-        Playlist.fetchAsync(this.__channelId, this.__accessToken, this.__clock)
-          .catch((error) => {
-            this.warn(`Fetch error: Unable to fetch playlist (${error.message})`);
-            reject(new Error(`Unable to fetch playlist (${error.message})`));
-          })
-          .then((playlist) => {
-            this.debug("Fetch: Done");
-
-            if(this.__started) {
-              this.__audioManager.update(playlist, this.__clock);
-            }
-
-            resolve(playlist);
-          });
+        this.__fetchPlaylist(resolve, reject);
       });
-
       return promise;
     }
   }
 
 
+  private __fetchPlaylist(resolve: any, reject: any) : void {
+    this.debug("Fetch: Fetching playlist...");
+    this.__playlistFetcher.fetchAsync()
+      .then((playlist) => {
+        this.debug("Fetch: Done");
+        resolve(playlist);
+      })
+      .catch((error) => {
+        this.warn(`Fetch error: Unable to fetch playlist (${error.message})`);
+        reject(new Error(`Unable to fetch playlist (${error.message})`));
+      });
+  }
+
+
   private __fetchOnceAndRepeat() : void {
     this.__fetchOnce()
-      .catch((error) => {
+      .then((playlist) => {
+        if(this.__started) {
+          this.__audioManager.update(playlist, this.__clock);
+        }
         this.__scheduleNextFetch();
       })
-      .then((playlist) => {
+      .catch((error) => {
         this.__scheduleNextFetch();
       });
   }
