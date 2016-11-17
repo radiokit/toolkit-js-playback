@@ -46,6 +46,7 @@ export class AudioManager extends Base {
     for(let id in tracksToAdd) {
       this.debug(`Adding track: ID = ${id}`);
       this.__audioPlayers[id] = Factory.makeFromTrack(tracks[id], clock);
+      this.__audioPlayers[id].setVolume(this.__volume);
       this.__audioPlayers[id].on('playback-started', this.__onAudioPlayerPlaybackStarted.bind(this));
       this.__audioPlayers[id].on('position', this.__onAudioPlayerPosition.bind(this));
       this.__audioPlayers[id].start();
