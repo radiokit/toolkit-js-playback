@@ -45,6 +45,7 @@ export class PlaylistFetcher {
       xhr.open('GET', url, true);
       xhr.setRequestHeader('Cache-Control', 'no-cache, must-revalidate');
       xhr.setRequestHeader('Authorization', `Bearer ${this.__accessToken}`);
+      xhr.setRequestHeader('Accept', 'application/json');
       xhr.timeout = 15000;  // ms
 
       xhr.onerror = function(e) {

@@ -114,6 +114,7 @@ export class Track extends Base {
 
       xhr.open('GET', url, true);
       xhr.setRequestHeader('Authorization', `Bearer ${this.__accessToken}`);
+      xhr.setRequestHeader('Accept', 'application/json');
       xhr.timeout = 15000;  // ms
 
       xhr.onerror = function(e) {
