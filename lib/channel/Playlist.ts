@@ -13,7 +13,7 @@ export class Playlist {
   /**
    * Factory that creates a playlist out of JSON data in the API format.
    */
-  public static makeFromJson(data: Array<Object>) : Playlist {
+  public static makeFromJson(accessToken: string, data: Array<Object>) : Playlist {
     let tracks : Object = {};
 
     for(let record of data) {
@@ -25,7 +25,7 @@ export class Playlist {
       let fadeInAt    : Date | null  = record['fade_in_at'] !== null ? new Date(record['fade_in_at']) : null;
       let fadeOutAt   : Date | null  = record['fade_out_at'] !== null ? new Date(record['fade_out_at']) : null;
 
-      let track = new Track(id, fileId, cueInAt, cueOutAt, cueOffset, fadeInAt, fadeOutAt);
+      let track = new Track(accessToken, id, fileId, cueInAt, cueOutAt, cueOffset, fadeInAt, fadeOutAt);
       tracks[id] = track;
     }
 

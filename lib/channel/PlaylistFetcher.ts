@@ -4,8 +4,8 @@ import { Playlist } from './Playlist';
 
 
 /**
- * This class represents a playlist of files to be played currently or
- * in a short time span on a given channel.
+ * This class allows to fetch a Playlist of tracks that are schedule for
+ * current time plus small margin.
  */
 export class PlaylistFetcher {
   private __clock: SyncClock;
@@ -13,7 +13,7 @@ export class PlaylistFetcher {
   private __accessToken: string;
 
 
-  constructor(channelId: string, accessToken: string, clock: SyncClock) {
+  constructor(accessToken: string, channelId: string, clock: SyncClock) {
     this.__clock = clock;
     this.__channelId = channelId;
     this.__accessToken = accessToken;
@@ -21,8 +21,7 @@ export class PlaylistFetcher {
 
 
   /**
-   * Factory that asynchronously fetches and creates a playlist
-   * for a given channel.
+   * Asynchronously fetches and creates a Playlist.
    */
   public fetchAsync() : Promise<Playlist> {
     const promise = new Promise<Playlist>((resolve: any, reject: any) => {
@@ -60,11 +59,11 @@ export class PlaylistFetcher {
         reject(new Error(`Unable to fetch playlist: Timeout`));
       }
 
-      xhr.onreadystatechange = function() {
+      xhr.onreadystatechange = () => {
         if(xhr.readyState === 4) {
           if(xhr.status === 200) {
             const responseAsJson = JSON.parse(xhr.responseText);
-            resolve(Playlist.makeFromJson(responseAsJson["data"]));
+            resolve(Playlist.makeFromJson(this.__accessToken, responseAsJson["data"]));
 
           } else {
             reject(new Error(`Unable to fetch playlist: Unexpected response (status = ${xhr.status})`));

@@ -1,4 +1,9 @@
+import { Track } from '../channel/Track';
+
+
 export interface IAudioPlayer {
-  play(); // TODO add types
-  stop(); // TODO add types
+  start() : IAudioPlayer;
+  stop() : IAudioPlayer;
+  setVolume(volume: number) : IAudioPlayer;
+  getTrack() : Track;
 }

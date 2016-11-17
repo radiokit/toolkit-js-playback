@@ -1,6 +1,7 @@
 import { Base } from '../Base';
 import { SyncClock } from '../clock/SyncClock';
 import { Playlist } from '../channel/Playlist';
+import { Track } from '../channel/Track';
 import { PlaylistFetcher } from '../channel/PlaylistFetcher';
 import { AudioManager } from '../audio/AudioManager';
 
@@ -8,6 +9,13 @@ import { AudioManager } from '../audio/AudioManager';
 /**
  * This class represents a single channel (stream) that is broadcasted from
  * RadioKit servers.
+ *
+ * It emits the following events:
+ *
+ * - error-network (no args) - when network error was encountered
+ * - track-playback-started (arg1: track) - when playback starts
+ * - track-position (arg1: track, arg1: position in ms, arg2: duration in ms) -
+ *   when the position is updated for the last track for which playback has started
  */
 export class Player extends Base {
   private __channelId:        string;
@@ -17,6 +25,7 @@ export class Player extends Base {
   private __started:          boolean;
   private __clock?:           SyncClock = null;
   private __playlistFetcher?: PlaylistFetcher = null;
+  private __volume:           number = 1.0;
 
 
   constructor(channelId: string, accessToken: string) {
@@ -25,22 +34,58 @@ export class Player extends Base {
     this.__started = false;
     this.__channelId = channelId;
     this.__accessToken = accessToken;
-    this.__audioManager = new AudioManager();
   }
 
 
   public start() : Player {
     this.__startFetching();
     this.__started = true;
+
+    this.__audioManager = new AudioManager();
+    this.__audioManager.setVolume(this.__volume);
+    this.__audioManager.on('playback-started', this.__onAudioManagerPlaybackStarted.bind(this));
+    this.__audioManager.on('position', this.__onAudioManagerPosition.bind(this));
     return this;
   }
 
 
   public stop() : Player {
     this.__stopFetching();
-    this.__audioManager.cleanup()
     this.__started = false;
+
+    // Remove all event handlers to avoid memory leaks
+    this.__audioManager.offAll();
+
+    // Cleanup audio manager to avoid memory leaks
+    this.__audioManager.cleanup()
+
+    // Remove audio manager
+    delete this.__audioManager;
+    this.__audioManager = undefined;
+
     return this;
+  }
+
+
+  public setVolume(volume: number) : Player {
+    if(volume < 0.0 || volume > 1.0) {
+      throw new Error('Volume out of range');
+    }
+
+    this.debug(`Volume set to ${volume}`);
+
+    this.__volume = volume;
+
+    if(this.__audioManager) {
+      this.__audioManager.setVolume(volume);
+    }
+
+    return this;
+  }
+
+
+  public getVolume() : number {
+    return this.__volume;
   }
 
 
@@ -75,12 +120,13 @@ export class Player extends Base {
           .then((clock) => {
             this.debug("Fetch: Synchronized clock");
             this.__clock = clock;
-            this.__playlistFetcher = new PlaylistFetcher(this.__channelId, this.__accessToken, clock);
+            this.__playlistFetcher = new PlaylistFetcher(this.__accessToken, this.__channelId, clock);
 
             return this.__fetchPlaylist(resolve, reject);
           })
           .catch((error) => {
             this.warn(`Fetch error: Unable to sync clock (${error.message})`);
+            this._trigger('error-network');
             reject(new Error(`Unable to sync clock (${error.message})`));
           });
       });
@@ -104,6 +150,7 @@ export class Player extends Base {
       })
       .catch((error) => {
         this.warn(`Fetch error: Unable to fetch playlist (${error.message})`);
+        this._trigger('error-network');
         reject(new Error(`Unable to fetch playlist (${error.message})`));
       });
   }
@@ -132,5 +179,15 @@ export class Player extends Base {
         this.__fetchOnceAndRepeat();
       }, timeout);
     }
+  }
+
+
+  private __onAudioManagerPosition(track: Track, position: number, duration: number) : void {
+    this._trigger('track-position', track, position, duration);
+  }
+
+
+  private __onAudioManagerPlaybackStarted(track: Track) : void {
+    this._trigger('track-playback-started', track);
   }
 }
