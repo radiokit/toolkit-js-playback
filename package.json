@@ -1,6 +1,6 @@
 {
   "name": "radiokit-toolkit-playback",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "RadioKit Toolkit for playing back audio content",
   "main": "lib/index.js",
   "scripts": {
@@ -14,8 +14,7 @@
     "Marcin Lewandowski <marcin@radiokit.org>"
   ],
   "license": "MIT",
-  "dependencies": {
-  },
+  "dependencies": {},
   "devDependencies": {
     "browserify": "^9.0.8",
     "typescript": "^2.0.6",
