@@ -14,8 +14,6 @@ High-level JavaScript API for performing playback of RadioKit channels.
 
 Browser-compatible version will be located in `dist/browser/`.
 
-TODO: build native JS version for NPM.
-
 # Demo
 
 In order to run demo located in the `demo/` folder, build the browser version,
@@ -27,7 +25,10 @@ And open http://localhost:8000 in the browser.
 
 Then you can type in the browser console e.g.
 
-`x = new RadioKitToolkitPlayback.Player.Channel("3d49ef93-a010-4649-b3ed-b0f99fe96173", 123).start().then(function(channel) { console.debug(channel.fetch()); });`
+```javascript
+window.player = new RadioKitToolkitPlayback.Player.Channel("3d49ef93-a010-4649-b3ed-b0f99fe96173", "123");
+window.player.start();
+```
 
 # Authors
 
