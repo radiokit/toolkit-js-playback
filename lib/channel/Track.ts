@@ -118,15 +118,15 @@ export class Track extends Base {
       xhr.timeout = 15000;  // ms
 
       xhr.onerror = function(e) {
-        reject(new Error(`Unable to fetch playlist: Network error (${xhr.status})`));
+        reject(new Error(`Unable to fetch track info: Network error (${xhr.status})`));
       }
 
       xhr.onabort = function(e) {
-        reject(new Error(`Unable to fetch playlist: Aborted`));
+        reject(new Error(`Unable to fetch track info: Aborted`));
       }
 
       xhr.ontimeout = function(e) {
-        reject(new Error(`Unable to fetch playlist: Timeout`));
+        reject(new Error(`Unable to fetch track info: Timeout`));
       }
 
       xhr.onreadystatechange = () => {
