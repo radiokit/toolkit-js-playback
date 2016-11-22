@@ -53,15 +53,17 @@ export class Player extends Base {
     this.__stopFetching();
     this.__started = false;
 
-    // Remove all event handlers to avoid memory leaks
-    this.__audioManager.offAll();
+    if(this.__audioManager) {
+      // Remove all event handlers to avoid memory leaks
+      this.__audioManager.offAll();
 
-    // Cleanup audio manager to avoid memory leaks
-    this.__audioManager.cleanup()
+      // Cleanup audio manager to avoid memory leaks
+      this.__audioManager.cleanup()
 
-    // Remove audio manager
-    delete this.__audioManager;
-    this.__audioManager = undefined;
+      // Remove audio manager
+      delete this.__audioManager;
+      this.__audioManager = undefined;
+    }
 
     return this;
   }
