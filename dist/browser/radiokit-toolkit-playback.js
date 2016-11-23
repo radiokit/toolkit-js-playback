@@ -96,10 +96,12 @@
 	    Player.prototype.stop = function () {
 	        this.__stopFetching();
 	        this.__started = false;
-	        this.__audioManager.offAll();
-	        this.__audioManager.cleanup();
-	        delete this.__audioManager;
-	        this.__audioManager = undefined;
+	        if (this.__audioManager) {
+	            this.__audioManager.offAll();
+	            this.__audioManager.cleanup();
+	            delete this.__audioManager;
+	            this.__audioManager = undefined;
+	        }
 	        return this;
 	    };
 	    Player.prototype.setVolume = function (volume) {
@@ -529,13 +531,13 @@
 	            xhr.setRequestHeader('Accept', 'application/json');
 	            xhr.timeout = 15000;
 	            xhr.onerror = function (e) {
-	                reject(new Error("Unable to fetch playlist: Network error (" + xhr.status + ")"));
+	                reject(new Error("Unable to fetch track info: Network error (" + xhr.status + ")"));
 	            };
 	            xhr.onabort = function (e) {
-	                reject(new Error("Unable to fetch playlist: Aborted"));
+	                reject(new Error("Unable to fetch track info: Aborted"));
 	            };
 	            xhr.ontimeout = function (e) {
-	                reject(new Error("Unable to fetch playlist: Timeout"));
+	                reject(new Error("Unable to fetch track info: Timeout"));
 	            };
 	            xhr.onreadystatechange = function () {
 	                if (xhr.readyState === 4) {
