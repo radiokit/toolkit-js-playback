@@ -836,7 +836,7 @@
 	    HTMLPlayer.prototype.__onCueInTimeout = function () {
 	        this.debug('Cue In timeout has passed');
 	        this.__cueInTimeoutId = 0;
-	        this.__preparePlayback();
+	        this.__startPlayback();
 	    };
 	    HTMLPlayer.prototype.__preparePlayback = function () {
 	        this.debug('Preparing playback');
@@ -844,7 +844,6 @@
 	        this.__audio.volume = this.__volume;
 	        this.__audio.onloadedmetadata = this.__onAudioLoadedMetadata.bind(this);
 	        this.__audio.onerror = this.__onAudioError.bind(this);
-	        this.__audio.onended = this.__onAudioEnded.bind(this);
 	        if (this.__audio.canPlayType('application/ogg; codecs=opus')) {
 	            this.__audio.src = "https://essence.radiokitapp.org/api/cdn/v1.0/vault/file/" + this.__track.getFileId() + "/variant/webbrowser-opus";
 	        }
@@ -861,6 +860,7 @@
 	        this.__audio.onwaiting = this.__onAudioWaiting.bind(this);
 	        this.__audio.onstalled = this.__onAudioStalled.bind(this);
 	        this.__audio.onsuspend = this.__onAudioSuspended.bind(this);
+	        this.__audio.onended = this.__onAudioEnded.bind(this);
 	        this.__audio.play();
 	        this._trigger('playback-started', this.__track);
 	    };
@@ -873,7 +873,10 @@
 	            this.__audio.onwaiting = undefined;
 	            this.__audio.onstalled = undefined;
 	            this.__audio.onsuspend = undefined;
-	            this.__audio.pause();
+	            if (this.__audio.readyState == 4) {
+	                this.__audio.pause();
+	            }
+	            this.__audio.src = '';
 	            delete this.__audio;
 	            this.__audio = undefined;
 	        }
