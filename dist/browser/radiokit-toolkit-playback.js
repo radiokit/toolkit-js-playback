@@ -789,14 +789,14 @@
 	    HTMLPlayer.prototype._loggerTag = function () {
 	        return this['constructor']['name'] + " " + this.__track.getId();
 	    };
-	    HTMLPlayer.prototype.__onAudioLoadedMetadata = function (e) {
-	        this.debug('Loaded metadata');
-	        this.__audio.onloadedmetadata = undefined;
+	    HTMLPlayer.prototype.__onAudioCanPlayThrough = function (e) {
+	        this.debug('Can play through');
+	        this.__audio.oncanplaythrough = undefined;
 	        var now = this.__clock.nowAsTimestamp();
 	        var cueInAt = this.__track.getCueInAt().valueOf();
 	        var cueOutAt = this.__track.getCueOutAt().valueOf();
 	        if (now >= cueOutAt) {
-	            this.debug('Track is obsolete');
+	            this.warn('Unable to play: Track is obsolete');
 	        }
 	        else {
 	            if (now < cueInAt) {
@@ -824,6 +824,12 @@
 	        this.debug('EOS');
 	        this.__stopPlayback();
 	    };
+	    HTMLPlayer.prototype.__onAudioSeeking = function (e) {
+	        this.debug('Seeking');
+	    };
+	    HTMLPlayer.prototype.__onAudioSeeked = function (e) {
+	        this.debug('Seeked');
+	    };
 	    HTMLPlayer.prototype.__onAudioWaiting = function (e) {
 	        this.warn('Waiting');
 	    };
@@ -842,8 +848,7 @@
 	        this.debug('Preparing playback');
 	        this.__audio = new Audio();
 	        this.__audio.volume = this.__volume;
-	        this.__audio.onloadedmetadata = this.__onAudioLoadedMetadata.bind(this);
-	        this.__audio.onerror = this.__onAudioError.bind(this);
+	        this.__audio.preload = 'none';
 	        if (this.__audio.canPlayType('application/ogg; codecs=opus')) {
 	            this.__audio.src = "https://essence.radiokitapp.org/api/cdn/v1.0/vault/file/" + this.__track.getFileId() + "/variant/webbrowser-opus";
 	        }
@@ -853,6 +858,27 @@
 	        else {
 	            throw new Error('Browser supports none of formats server can send.');
 	        }
+	        var now = this.__clock.nowAsTimestamp();
+	        var cueInAt = this.__track.getCueInAt().valueOf();
+	        var cueOutAt = this.__track.getCueOutAt().valueOf();
+	        if (now >= cueOutAt) {
+	            this.warn('Unable to set initial currentTime: Track is obsolete');
+	        }
+	        else {
+	            if (now <= cueInAt) {
+	                this.__audio.currentTime = 0;
+	            }
+	            else {
+	                var position = now - cueInAt;
+	                this.debug("Setting initial currentTime to " + position + " ms");
+	                this.__audio.onseeking = this.__onAudioSeeking.bind(this);
+	                this.__audio.onseeked = this.__onAudioSeeked.bind(this);
+	                this.__audio.currentTime = position / 1000.0;
+	            }
+	        }
+	        this.__audio.oncanplaythrough = this.__onAudioCanPlayThrough.bind(this);
+	        this.__audio.onerror = this.__onAudioError.bind(this);
+	        this.__audio.load();
 	    };
 	    HTMLPlayer.prototype.__startPlayback = function () {
 	        this.debug('Starting playback');
@@ -867,12 +893,14 @@
 	    HTMLPlayer.prototype.__stopPlayback = function () {
 	        this.debug('Stopping playback');
 	        if (this.__audio) {
-	            this.__audio.onloadedmetadata = undefined;
+	            this.__audio.oncanplaythrough = undefined;
 	            this.__audio.onerror = undefined;
 	            this.__audio.onended = undefined;
 	            this.__audio.onwaiting = undefined;
 	            this.__audio.onstalled = undefined;
 	            this.__audio.onsuspend = undefined;
+	            this.__audio.onseeking = undefined;
+	            this.__audio.onseeked = undefined;
 	            if (this.__audio.readyState == 4) {
 	                this.__audio.pause();
 	            }
