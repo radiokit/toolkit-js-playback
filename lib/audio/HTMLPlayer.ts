@@ -123,12 +123,8 @@ export class HTMLPlayer extends Base implements IAudioPlayer {
   }
 
 
-  private __onAudioCanPlayThrough(e) : void {
-    this.debug('Can play through');
-
-    // Remove event handler. Otherwise it will be triggered again if we
-    // update currentTime in the subsequent code.
-    this.__audio.oncanplaythrough = undefined;
+  private __onAudioCanPlayThroughWhenPreparing(e) : void {
+    this.debug('Can play through (when preparing)');
 
     // Adjust the currentTime. Seek takes some time, sometimes even a few seconds
     // so previously set currentTime may be obsolete. We recompute it again
@@ -155,17 +151,30 @@ export class HTMLPlayer extends Base implements IAudioPlayer {
 
       } else if(now > cueInAt) {
         // We are too late, seek
+
+        // Replace event handler. It will be triggered again if we update
+        // currentTime in the subsequent code.
+        this.__audio.oncanplaythrough = this.__onAudioCanPlayThroughWhenReady.bind(this);
+
+        // Compute new position
         const position = now - cueInAt;
         this.debug(`Seeking to ${position} ms`);
 
-        this.__audio.currentTime = position / 1000.0;
-        this.__startPlayback();
+        // Set new position, this will cause to emit canplaythrough event again
+        // when seeking is done.
+        this.__audio.currentTime = position / 1000.0;        
 
       } else {
         // We are right on time, just play
         this.__startPlayback();
       }
     }
+  }
+
+
+  private __onAudioCanPlayThroughWhenReady(e) : void {
+    this.debug('Can play through (when ready)');
+    this.__startPlayback();
   }
 
 
@@ -264,7 +273,7 @@ export class HTMLPlayer extends Base implements IAudioPlayer {
 
     // Set event handlers. Remember that canplaythrough is emitted also on
     // setting currentTime so it has to be bound after currentTime is valid.
-    this.__audio.oncanplaythrough = this.__onAudioCanPlayThrough.bind(this);
+    this.__audio.oncanplaythrough = this.__onAudioCanPlayThroughWhenPreparing.bind(this);
     this.__audio.onerror = this.__onAudioError.bind(this);
 
     // Cause audio to load
