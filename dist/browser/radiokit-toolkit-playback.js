@@ -789,9 +789,8 @@
 	    HTMLPlayer.prototype._loggerTag = function () {
 	        return this['constructor']['name'] + " " + this.__track.getId();
 	    };
-	    HTMLPlayer.prototype.__onAudioCanPlayThrough = function (e) {
-	        this.debug('Can play through');
-	        this.__audio.oncanplaythrough = undefined;
+	    HTMLPlayer.prototype.__onAudioCanPlayThroughWhenPreparing = function (e) {
+	        this.debug('Can play through (when preparing)');
 	        var now = this.__clock.nowAsTimestamp();
 	        var cueInAt = this.__track.getCueInAt().valueOf();
 	        var cueOutAt = this.__track.getCueOutAt().valueOf();
@@ -805,15 +804,19 @@
 	                this.__cueInTimeoutId = setTimeout(this.__onCueInTimeout.bind(this), timeout);
 	            }
 	            else if (now > cueInAt) {
+	                this.__audio.oncanplaythrough = this.__onAudioCanPlayThroughWhenReady.bind(this);
 	                var position = now - cueInAt;
 	                this.debug("Seeking to " + position + " ms");
 	                this.__audio.currentTime = position / 1000.0;
-	                this.__startPlayback();
 	            }
 	            else {
 	                this.__startPlayback();
 	            }
 	        }
+	    };
+	    HTMLPlayer.prototype.__onAudioCanPlayThroughWhenReady = function (e) {
+	        this.debug('Can play through (when ready)');
+	        this.__startPlayback();
 	    };
 	    HTMLPlayer.prototype.__onAudioError = function (e) {
 	        this.warn('Error');
@@ -876,7 +879,7 @@
 	                this.__audio.currentTime = position / 1000.0;
 	            }
 	        }
-	        this.__audio.oncanplaythrough = this.__onAudioCanPlayThrough.bind(this);
+	        this.__audio.oncanplaythrough = this.__onAudioCanPlayThroughWhenPreparing.bind(this);
 	        this.__audio.onerror = this.__onAudioError.bind(this);
 	        this.__audio.load();
 	    };
