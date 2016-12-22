@@ -105,17 +105,27 @@ export class HTMLPlayer extends Base implements IAudioPlayer {
   }
 
 
-  private __onAudioLoadedMetadata(e) : void {
-    this.debug('Loaded metadata');
-    this.__audio.onloadedmetadata = undefined;
+  private __onAudioCanPlayThrough(e) : void {
+    this.debug('Can play through');
 
+    // Remove event handler. Otherwise it will be triggered again if we
+    // update currentTime while adjusting the currentTime.
+    this.__audio.oncanplaythrough = undefined;
+
+    // Adjust the currentTime. Seek takes some time, sometimes even a few seconds
+    // so previously set currentTime may be obsolete. We recompute it again
+    // but now seeking should be faster as most probably after canplaythrough
+    // event was emitted we have some bufferred data.
     const now = this.__clock.nowAsTimestamp();
     const cueInAt = this.__track.getCueInAt().valueOf();
     const cueOutAt = this.__track.getCueOutAt().valueOf();
 
     if(now >= cueOutAt) {
       // We are after the sound is supposed to play, do nothing.
-      this.debug('Track is obsolete');
+      //
+      // Probably that means that seeking was so long that before it has
+      // finished the cue out at has passed.
+      this.warn('Unable to play: Track is obsolete');
 
     } else {
       // We are before the sound is supposed to play
@@ -154,6 +164,16 @@ export class HTMLPlayer extends Base implements IAudioPlayer {
   }
 
 
+  private __onAudioSeeking(e) : void {
+    this.debug('Seeking');
+  }
+
+
+  private __onAudioSeeked(e) : void {
+    this.debug('Seeked');
+  }
+
+
   private __onAudioWaiting(e) : void {
     this.warn('Waiting');
   }
@@ -179,10 +199,14 @@ export class HTMLPlayer extends Base implements IAudioPlayer {
   private __preparePlayback() : void {
     this.debug('Preparing playback');
     this.__audio = new Audio();
-    this.__audio.volume = this.__volume;
-    this.__audio.onloadedmetadata = this.__onAudioLoadedMetadata.bind(this);
-    this.__audio.onerror = this.__onAudioError.bind(this);
 
+    // Set proper volume
+    this.__audio.volume = this.__volume;
+
+    // Disable automatic preloading
+    this.__audio.preload = 'none';
+
+    // Set source URL in the best format supported by the browser
     if(this.__audio.canPlayType('application/ogg; codecs=opus')) {
       this.__audio.src = `https://essence.radiokitapp.org/api/cdn/v1.0/vault/file/${this.__track.getFileId()}/variant/webbrowser-opus`;
 
@@ -192,6 +216,41 @@ export class HTMLPlayer extends Base implements IAudioPlayer {
     } else {
       throw new Error('Browser supports none of formats server can send.');
     }
+
+    // Set currentTime to position from which track will start playback
+    const now = this.__clock.nowAsTimestamp();
+    const cueInAt = this.__track.getCueInAt().valueOf();
+    const cueOutAt = this.__track.getCueOutAt().valueOf();
+
+    if(now >= cueOutAt) {
+      // We are after the sound is supposed to play, do nothing.
+      this.warn('Unable to set initial currentTime: Track is obsolete');
+
+    } else {
+      // We are before the sound is supposed to play
+      if(now <= cueInAt) {
+        // We are too early, will wait to start, but once this happens,
+        // it will play from the beginning.
+        this.__audio.currentTime = 0;
+
+      } else {
+        // We are in the middle of the track, we are going to seek.
+        const position = now - cueInAt;
+        this.debug(`Setting initial currentTime to ${position} ms`);
+        this.__audio.onseeking = this.__onAudioSeeking.bind(this);
+        this.__audio.onseeked = this.__onAudioSeeked.bind(this);
+
+        this.__audio.currentTime = position / 1000.0;
+      }
+    }
+
+    // Set event handlers. Remember that canplaythrough is emitted also on
+    // setting currentTime so it has to be bound after currentTime is valid.
+    this.__audio.oncanplaythrough = this.__onAudioCanPlayThrough.bind(this);
+    this.__audio.onerror = this.__onAudioError.bind(this);
+
+    // Cause audio to load
+    this.__audio.load();
   }
 
 
@@ -212,12 +271,14 @@ export class HTMLPlayer extends Base implements IAudioPlayer {
   private __stopPlayback() : void {
     this.debug('Stopping playback');
     if(this.__audio) {
-      this.__audio.onloadedmetadata = undefined;
+      this.__audio.oncanplaythrough = undefined;
       this.__audio.onerror = undefined;
       this.__audio.onended = undefined;
       this.__audio.onwaiting = undefined;
       this.__audio.onstalled = undefined;
       this.__audio.onsuspend = undefined;
+      this.__audio.onseeking = undefined;
+      this.__audio.onseeked = undefined;
       if(this.__audio.readyState == 4) {
         this.__audio.pause();
       }
