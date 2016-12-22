@@ -39,10 +39,12 @@ export class HTMLPlayer extends Base implements IAudioPlayer {
    * Starts the player.
    *
    * It will try to play given track on time defined by it's cue in point
-   * as long as it does not reach EOS or stop() is being called.
+   * as long as it does not reach EOS or stop() is being called. It will restart
+   * the playback in case of any issues and seek to the appropriate position.
    *
-   * It will restart the playback in case of any issues and seek to
-   * the appropriate position.
+   * Will throw an error if player is already started.
+   *
+   * Returns itself.
    *
    * TODO: Support fades
    * TODO: Support cue out
@@ -64,6 +66,12 @@ export class HTMLPlayer extends Base implements IAudioPlayer {
 
   /**
    * Stops the player.
+   *
+   * Cleans up all resources associated with the player.
+   *
+   * Will throw an error if player was not started.
+   *
+   * Returns itself.
    */
   public stop() : HTMLPlayer {
     if(this.__started) {
@@ -84,6 +92,8 @@ export class HTMLPlayer extends Base implements IAudioPlayer {
    * Sets the volume of this particular player.
    *
    * Accepted volume is number in range <0.0, 1.0>.
+   *
+   * Returns itself.
    */
   public setVolume(volume: number) : HTMLPlayer {
     if(volume < 0.0 || volume > 1.0) {
