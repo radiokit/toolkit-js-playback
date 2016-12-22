@@ -172,7 +172,7 @@ export class HTMLPlayer extends Base implements IAudioPlayer {
   private __onCueInTimeout() : void {
     this.debug('Cue In timeout has passed');
     this.__cueInTimeoutId = 0;
-    this.__preparePlayback();
+    this.__startPlayback();
   }
 
 
