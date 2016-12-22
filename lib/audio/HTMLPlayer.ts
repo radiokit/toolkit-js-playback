@@ -80,6 +80,11 @@ export class HTMLPlayer extends Base implements IAudioPlayer {
   }
 
 
+  /**
+   * Sets the volume of this particular player.
+   *
+   * Accepted volume is number in range <0.0, 1.0>.
+   */
   public setVolume(volume: number) : HTMLPlayer {
     if(volume < 0.0 || volume > 1.0) {
       throw new Error('Volume out of range');
@@ -95,6 +100,9 @@ export class HTMLPlayer extends Base implements IAudioPlayer {
   }
 
 
+  /**
+   * Returns Track associated with this player.
+   */
   public getTrack() : Track {
     return this.__track;
   }
@@ -109,7 +117,7 @@ export class HTMLPlayer extends Base implements IAudioPlayer {
     this.debug('Can play through');
 
     // Remove event handler. Otherwise it will be triggered again if we
-    // update currentTime while adjusting the currentTime.
+    // update currentTime in the subsequent code.
     this.__audio.oncanplaythrough = undefined;
 
     // Adjust the currentTime. Seek takes some time, sometimes even a few seconds
