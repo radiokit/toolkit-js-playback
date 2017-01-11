@@ -6,6 +6,7 @@ import { SyncClock } from '../clock/SyncClock';
 export class Track extends Base {
   private __id: string;
   private __fileId: string;
+  private __fileUrl: string;
   private __cueOffset: number;
   private __cueInAt: Date;
   private __cueOutAt: Date;
@@ -14,12 +15,13 @@ export class Track extends Base {
   private __accessToken: string;
 
 
-  constructor(accessToken: string, id: string, fileId: string, cueInAt: Date, cueOutAt: Date, cueOffset: number, fadeInAt?: Date, fadeOutAt?: Date) {
+  constructor(accessToken: string, id: string, fileId: string, fileUrl: string, cueInAt: Date, cueOutAt: Date, cueOffset: number, fadeInAt?: Date, fadeOutAt?: Date) {
     super();
 
     this.__accessToken = accessToken;
     this.__id = id;
     this.__fileId = fileId;
+    this.__fileUrl = fileUrl;
     this.__cueInAt = cueInAt;
     this.__cueOutAt = cueOutAt;
     this.__cueOffset = cueOffset;
@@ -35,6 +37,11 @@ export class Track extends Base {
 
   public getFileId() : string {
     return this.__fileId;
+  }
+
+
+  public getFileUrl() : string {
+    return this.__fileUrl;
   }
 
 

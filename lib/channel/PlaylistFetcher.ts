@@ -1,6 +1,7 @@
 import { SyncClock } from '../clock/SyncClock';
 import { Track } from './Track';
 import { Playlist } from './Playlist';
+import { PlaylistResolver } from './PlaylistResolver';
 
 
 /**
@@ -64,7 +65,15 @@ export class PlaylistFetcher {
         if(xhr.readyState === 4) {
           if(xhr.status === 200) {
             const responseAsJson = JSON.parse(xhr.responseText);
-            resolve(Playlist.makeFromJson(this.__accessToken, responseAsJson["data"]));
+            const resolver = new PlaylistResolver(this.__accessToken, responseAsJson['data']);
+
+            resolver.resolveAsync()
+              .then((playlist) => {
+                resolve(playlist);
+              })
+              .catch((error) => {
+                reject(new Error(`Unable to resolve playlist (${error.message})`));
+              });
 
           } else {
             reject(new Error(`Unable to fetch playlist: Unexpected response (status = ${xhr.status})`));

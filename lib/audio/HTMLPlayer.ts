@@ -162,7 +162,7 @@ export class HTMLPlayer extends Base implements IAudioPlayer {
 
         // Set new position, this will cause to emit canplaythrough event again
         // when seeking is done.
-        this.__audio.currentTime = position / 1000.0;        
+        this.__audio.currentTime = position / 1000.0;
 
       } else {
         // We are right on time, just play
@@ -233,16 +233,8 @@ export class HTMLPlayer extends Base implements IAudioPlayer {
     // Disable automatic preloading
     this.__audio.preload = 'none';
 
-    // Set source URL in the best format supported by the browser
-    if(this.__audio.canPlayType('application/ogg; codecs=opus')) {
-      this.__audio.src = `https://essence.radiokitapp.org/api/cdn/v1.0/vault/file/${this.__track.getFileId()}/variant/webbrowser-opus`;
-
-    } else if(this.__audio.canPlayType('audio/mpeg')) {
-      this.__audio.src = `https://essence.radiokitapp.org/api/cdn/v1.0/vault/file/${this.__track.getFileId()}/variant/webbrowser-mp3`;
-
-    } else {
-      throw new Error('Browser supports none of formats server can send.');
-    }
+    // Get URL from the playlist
+    this.__audio.src = this.__track.getFileUrl();
 
     // Set currentTime to position from which track will start playback
     const now = this.__clock.nowAsTimestamp();

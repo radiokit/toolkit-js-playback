@@ -71,7 +71,7 @@
 	var Base_1 = __webpack_require__(2);
 	var SyncClock_1 = __webpack_require__(3);
 	var PlaylistFetcher_1 = __webpack_require__(4);
-	var AudioManager_1 = __webpack_require__(8);
+	var AudioManager_1 = __webpack_require__(9);
 	var Player = (function (_super) {
 	    __extends(Player, _super);
 	    function Player(channelId, accessToken) {
@@ -346,7 +346,7 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
-	var Playlist_1 = __webpack_require__(5);
+	var PlaylistResolver_1 = __webpack_require__(5);
 	var PlaylistFetcher = (function () {
 	    function PlaylistFetcher(accessToken, channelId, clock) {
 	        this.__clock = clock;
@@ -388,7 +388,14 @@
 	                if (xhr.readyState === 4) {
 	                    if (xhr.status === 200) {
 	                        var responseAsJson = JSON.parse(xhr.responseText);
-	                        resolve(Playlist_1.Playlist.makeFromJson(_this.__accessToken, responseAsJson["data"]));
+	                        var resolver = new PlaylistResolver_1.PlaylistResolver(_this.__accessToken, responseAsJson['data']);
+	                        resolver.resolveAsync()
+	                            .then(function (playlist) {
+	                            resolve(playlist);
+	                        })
+	                            .catch(function (error) {
+	                            reject(new Error("Unable to resolve playlist (" + error.message + ")"));
+	                        });
 	                    }
 	                    else {
 	                        reject(new Error("Unable to fetch playlist: Unexpected response (status = " + xhr.status + ")"));
@@ -409,23 +416,102 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
-	var Track_1 = __webpack_require__(6);
+	var Playlist_1 = __webpack_require__(6);
+	var PlaylistResolver = (function () {
+	    function PlaylistResolver(accessToken, playlistRaw) {
+	        this.__playlistRaw = playlistRaw;
+	        this.__accessToken = accessToken;
+	    }
+	    PlaylistResolver.prototype.resolveAsync = function () {
+	        var _this = this;
+	        var promise = new Promise(function (resolve, reject) {
+	            var xhr = new XMLHttpRequest();
+	            var fileIds = [];
+	            for (var _i = 0, _a = _this.__playlistRaw; _i < _a.length; _i++) {
+	                var file = _a[_i];
+	                fileIds.push(encodeURIComponent(file["file"]));
+	            }
+	            var url = 'https://vault.radiokitapp.org/api/rest/v1.0/data/record/file' +
+	                '?a[]=id' +
+	                '&a[]=public_url' +
+	                '&c[id][]=in%20' + fileIds.join("%20");
+	            xhr.open('GET', url, true);
+	            xhr.setRequestHeader('Cache-Control', 'no-cache, must-revalidate');
+	            xhr.setRequestHeader('Authorization', "Bearer " + _this.__accessToken);
+	            xhr.setRequestHeader('Accept', 'application/json');
+	            xhr.timeout = 15000;
+	            var audio = new Audio();
+	            var knownFormats = [];
+	            if (audio.canPlayType('application/ogg; codecs=opus')) {
+	                knownFormats.push('application/ogg; codecs=opus');
+	            }
+	            if (audio.canPlayType('application/ogg; codecs=vorbis')) {
+	                knownFormats.push('application/ogg; codecs=vorbis');
+	            }
+	            if (audio.canPlayType('audio/mpeg')) {
+	                knownFormats.push('audio/mpeg');
+	            }
+	            xhr.setRequestHeader('X-RadioKit-KnownFormats', knownFormats.join(', '));
+	            xhr.onerror = function (e) {
+	                reject(new Error("Unable to fetch playlist: Network error (" + xhr.status + ")"));
+	            };
+	            xhr.onabort = function (e) {
+	                reject(new Error("Unable to fetch playlist: Aborted"));
+	            };
+	            xhr.ontimeout = function (e) {
+	                reject(new Error("Unable to fetch playlist: Timeout"));
+	            };
+	            xhr.onreadystatechange = function () {
+	                if (xhr.readyState === 4) {
+	                    if (xhr.status === 200) {
+	                        var responseAsJson = JSON.parse(xhr.responseText);
+	                        var responseData = responseAsJson['data'];
+	                        resolve(Playlist_1.Playlist.makeFromJson(_this.__accessToken, _this.__playlistRaw, responseData));
+	                    }
+	                    else {
+	                        reject(new Error("Unable to fetch files: Unexpected response (status = " + xhr.status + ")"));
+	                    }
+	                }
+	            };
+	            xhr.send();
+	        });
+	        return promise;
+	    };
+	    return PlaylistResolver;
+	}());
+	exports.PlaylistResolver = PlaylistResolver;
+
+
+/***/ },
+/* 6 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+	var Track_1 = __webpack_require__(7);
 	var Playlist = (function () {
 	    function Playlist(tracks) {
 	        this.__tracks = tracks;
 	    }
-	    Playlist.makeFromJson = function (accessToken, data) {
+	    Playlist.makeFromJson = function (accessToken, playlistRaw, filesRaw) {
 	        var tracks = {};
-	        for (var _i = 0, data_1 = data; _i < data_1.length; _i++) {
-	            var record = data_1[_i];
-	            var id = record['id'];
-	            var fileId = record['file'];
-	            var cueInAt = new Date(record['cue_in_at']);
-	            var cueOutAt = new Date(record['cue_out_at']);
-	            var cueOffset = record['cue_offset'];
-	            var fadeInAt = record['fade_in_at'] !== null ? new Date(record['fade_in_at']) : null;
-	            var fadeOutAt = record['fade_out_at'] !== null ? new Date(record['fade_out_at']) : null;
-	            var track = new Track_1.Track(accessToken, id, fileId, cueInAt, cueOutAt, cueOffset, fadeInAt, fadeOutAt);
+	        for (var _i = 0, playlistRaw_1 = playlistRaw; _i < playlistRaw_1.length; _i++) {
+	            var playlistRecord = playlistRaw_1[_i];
+	            var id = playlistRecord['id'];
+	            var fileId = playlistRecord['file'];
+	            var fileUrl = void 0;
+	            for (var _a = 0, filesRaw_1 = filesRaw; _a < filesRaw_1.length; _a++) {
+	                var fileRecord = filesRaw_1[_a];
+	                if (fileRecord['id'] === playlistRecord['file']) {
+	                    fileUrl = fileRecord['public_url'];
+	                    break;
+	                }
+	            }
+	            var cueInAt = new Date(playlistRecord['cue_in_at']);
+	            var cueOutAt = new Date(playlistRecord['cue_out_at']);
+	            var cueOffset = playlistRecord['cue_offset'];
+	            var fadeInAt = playlistRecord['fade_in_at'] !== null ? new Date(playlistRecord['fade_in_at']) : null;
+	            var fadeOutAt = playlistRecord['fade_out_at'] !== null ? new Date(playlistRecord['fade_out_at']) : null;
+	            var track = new Track_1.Track(accessToken, id, fileId, fileUrl, cueInAt, cueOutAt, cueOffset, fadeInAt, fadeOutAt);
 	            tracks[id] = track;
 	        }
 	        return new Playlist(tracks);
@@ -439,7 +525,7 @@
 
 
 /***/ },
-/* 6 */
+/* 7 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -449,14 +535,15 @@
 	    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 	};
 	var Base_1 = __webpack_require__(2);
-	var TrackInfo_1 = __webpack_require__(7);
+	var TrackInfo_1 = __webpack_require__(8);
 	var Track = (function (_super) {
 	    __extends(Track, _super);
-	    function Track(accessToken, id, fileId, cueInAt, cueOutAt, cueOffset, fadeInAt, fadeOutAt) {
+	    function Track(accessToken, id, fileId, fileUrl, cueInAt, cueOutAt, cueOffset, fadeInAt, fadeOutAt) {
 	        _super.call(this);
 	        this.__accessToken = accessToken;
 	        this.__id = id;
 	        this.__fileId = fileId;
+	        this.__fileUrl = fileUrl;
 	        this.__cueInAt = cueInAt;
 	        this.__cueOutAt = cueOutAt;
 	        this.__cueOffset = cueOffset;
@@ -468,6 +555,9 @@
 	    };
 	    Track.prototype.getFileId = function () {
 	        return this.__fileId;
+	    };
+	    Track.prototype.getFileUrl = function () {
+	        return this.__fileUrl;
 	    };
 	    Track.prototype.getCueInAt = function () {
 	        return this.__cueInAt;
@@ -568,7 +658,7 @@
 
 
 /***/ },
-/* 7 */
+/* 8 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -622,7 +712,7 @@
 
 
 /***/ },
-/* 8 */
+/* 9 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -631,7 +721,7 @@
 	    function __() { this.constructor = d; }
 	    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 	};
-	var Factory_1 = __webpack_require__(9);
+	var Factory_1 = __webpack_require__(10);
 	var Base_1 = __webpack_require__(2);
 	var AudioManager = (function (_super) {
 	    __extends(AudioManager, _super);
@@ -712,11 +802,11 @@
 
 
 /***/ },
-/* 9 */
+/* 10 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
-	var HTMLPlayer_1 = __webpack_require__(10);
+	var HTMLPlayer_1 = __webpack_require__(11);
 	var Factory = (function () {
 	    function Factory() {
 	    }
@@ -729,7 +819,7 @@
 
 
 /***/ },
-/* 10 */
+/* 11 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -852,15 +942,7 @@
 	        this.__audio = new Audio();
 	        this.__audio.volume = this.__volume;
 	        this.__audio.preload = 'none';
-	        if (this.__audio.canPlayType('application/ogg; codecs=opus')) {
-	            this.__audio.src = "https://essence.radiokitapp.org/api/cdn/v1.0/vault/file/" + this.__track.getFileId() + "/variant/webbrowser-opus";
-	        }
-	        else if (this.__audio.canPlayType('audio/mpeg')) {
-	            this.__audio.src = "https://essence.radiokitapp.org/api/cdn/v1.0/vault/file/" + this.__track.getFileId() + "/variant/webbrowser-mp3";
-	        }
-	        else {
-	            throw new Error('Browser supports none of formats server can send.');
-	        }
+	        this.__audio.src = this.__track.getFileUrl();
 	        var now = this.__clock.nowAsTimestamp();
 	        var cueInAt = this.__track.getCueInAt().valueOf();
 	        var cueOutAt = this.__track.getCueOutAt().valueOf();

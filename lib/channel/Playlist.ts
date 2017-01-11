@@ -13,19 +13,28 @@ export class Playlist {
   /**
    * Factory that creates a playlist out of JSON data in the API format.
    */
-  public static makeFromJson(accessToken: string, data: Array<Object>) : Playlist {
+  public static makeFromJson(accessToken: string, playlistRaw: Array<Object>, filesRaw: Array<Object>) : Playlist {
     let tracks : Object = {};
 
-    for(let record of data) {
-      let id          : string       = record['id'];
-      let fileId      : string       = record['file'];
-      let cueInAt     : Date         = new Date(record['cue_in_at']);
-      let cueOutAt    : Date         = new Date(record['cue_out_at']);
-      let cueOffset   : number       = record['cue_offset'];
-      let fadeInAt    : Date | null  = record['fade_in_at'] !== null ? new Date(record['fade_in_at']) : null;
-      let fadeOutAt   : Date | null  = record['fade_out_at'] !== null ? new Date(record['fade_out_at']) : null;
+    for(let playlistRecord of playlistRaw) {
+      let id          : string       = playlistRecord['id'];
+      let fileId      : string       = playlistRecord['file'];
+      let fileUrl     : string;
 
-      let track = new Track(accessToken, id, fileId, cueInAt, cueOutAt, cueOffset, fadeInAt, fadeOutAt);
+      for(let fileRecord of filesRaw) {
+        if(fileRecord['id'] === playlistRecord['file']) {
+          fileUrl = fileRecord['public_url'];
+          break;
+        }
+      }
+
+      let cueInAt     : Date         = new Date(playlistRecord['cue_in_at']);
+      let cueOutAt    : Date         = new Date(playlistRecord['cue_out_at']);
+      let cueOffset   : number       = playlistRecord['cue_offset'];
+      let fadeInAt    : Date | null  = playlistRecord['fade_in_at'] !== null ? new Date(playlistRecord['fade_in_at']) : null;
+      let fadeOutAt   : Date | null  = playlistRecord['fade_out_at'] !== null ? new Date(playlistRecord['fade_out_at']) : null;
+
+      let track = new Track(accessToken, id, fileId, fileUrl, cueInAt, cueOutAt, cueOffset, fadeInAt, fadeOutAt);
       tracks[id] = track;
     }
 
