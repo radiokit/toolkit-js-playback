@@ -1,3 +1,5 @@
+import { AffiliateInfo } from './AffiliateInfo';
+
 export class TrackInfo {
   private __name: string;
   private __metadata: Object;
@@ -34,7 +36,7 @@ export class TrackInfo {
 
     for(let affiliateItem of data['affiliate_items']) {
       let key = affiliateSchemas[affiliateItem['affiliate_schema_id']].key;
-      let value = affiliateItem['item_url'];
+      let value = new AffiliateInfo(affiliateItem);
 
       affiliates[key] = value;
     }
