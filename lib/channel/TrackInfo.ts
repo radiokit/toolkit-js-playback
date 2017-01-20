@@ -34,7 +34,7 @@ export class TrackInfo {
 
     for(let affiliateItem of data['affiliate_items']) {
       let key = affiliateSchemas[affiliateItem['affiliate_schema_id']].key;
-      let value = affiliateItem['affiliate_metadata'];
+      let value = affiliateItem['item_url'];
 
       affiliates[key] = value;
     }

@@ -89,7 +89,7 @@ export class Track extends Base {
 
         '&a[]=affiliate_items.id' +
         '&a[]=affiliate_items.affiliate_schema_id' +
-        '&a[]=affiliate_items.affiliate_metadata' +
+        '&a[]=affiliate_items.item_url' +
 
         '&a[]=metadata_schemas.id' +
         '&a[]=metadata_schemas.name' +
