@@ -6,6 +6,11 @@ export class AffiliateInfo {
   }
 
 
+  public hasItem() : boolean {
+    return this.__affiliateItem['item_url'] !== null;
+  }
+
+
   public getItemUrl() : string | null {
     return this.__affiliateItem['item_url'];
   }
