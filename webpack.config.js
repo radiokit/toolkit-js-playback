@@ -5,14 +5,14 @@ module.exports = {
         filename: 'radiokit-toolkit-playback.js'
     },
     resolve: {
-        extensions: ['', '.ts']
+        extensions: ['', '.ts'] // '' is required in webpack 1.x
     },
     devtool: 'source-map', // if we want a source map
     module: {
         loaders: [
             {
                 test: /\.ts$/,
-                loader: 'webpack-typescript?target=ES5'
+                loader: 'ts-loader'
             }
         ]
     }
