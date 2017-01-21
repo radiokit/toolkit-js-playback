@@ -8,7 +8,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git@bitbucket.org:radiokit/toolkit-js-playback.git"
+    "url": "git@github.com:radiokit/toolkit-js-playback.git"
   },
   "contributors": [
     "Marcin Lewandowski <marcin@radiokit.org>"
