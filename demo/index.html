@@ -33,7 +33,7 @@
           var affiliatesText = 'AFFILIATES:<ul>';
           affiliatesKeys = Object.keys(affiliatesInfo);
           for(var i = 0; i < affiliatesKeys.length; i++) {
-            affiliatesText += '<li><b>' + affiliatesKeys[i] + '</b>: ' + JSON.stringify(affiliatesInfo[affiliatesKeys[i]]) + '</li>';
+            affiliatesText += '<li><b>' + affiliatesKeys[i] + '</b>: ' + JSON.stringify(affiliatesInfo[affiliatesKeys[i]].getItemUrl()) + '</li>';
           }
           affiliatesText += '</ul>';
 
