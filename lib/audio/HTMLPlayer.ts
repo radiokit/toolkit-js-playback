@@ -336,11 +336,13 @@ export class HTMLPlayer extends Base implements IAudioPlayer {
 
 
   private __onPositionInterval() {
-    const position = Math.round(this.__audio.currentTime * 1000);
-    const cueInAt = this.__track.getCueInAt().valueOf();
-    const cueOutAt = this.__track.getCueOutAt().valueOf();
-    const duration = cueOutAt - cueInAt;
+    if(this.__audio) {
+      const position = Math.round(this.__audio.currentTime * 1000);
+      const cueInAt = this.__track.getCueInAt().valueOf();
+      const cueOutAt = this.__track.getCueOutAt().valueOf();
+      const duration = cueOutAt - cueInAt;
 
-    this._trigger('position', this.__track, position, duration);
+      this._trigger('position', this.__track, position, duration);
+    }
   }
 }
