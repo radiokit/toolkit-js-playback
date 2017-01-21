@@ -71,18 +71,19 @@
 	var Base_1 = __webpack_require__(2);
 	var SyncClock_1 = __webpack_require__(3);
 	var PlaylistFetcher_1 = __webpack_require__(4);
-	var AudioManager_1 = __webpack_require__(9);
+	var AudioManager_1 = __webpack_require__(10);
 	var Player = (function (_super) {
 	    __extends(Player, _super);
 	    function Player(channelId, accessToken) {
-	        _super.call(this);
-	        this.__fetchTimeoutId = 0;
-	        this.__clock = null;
-	        this.__playlistFetcher = null;
-	        this.__volume = 1.0;
-	        this.__started = false;
-	        this.__channelId = channelId;
-	        this.__accessToken = accessToken;
+	        var _this = _super.call(this) || this;
+	        _this.__fetchTimeoutId = 0;
+	        _this.__clock = null;
+	        _this.__playlistFetcher = null;
+	        _this.__volume = 1.0;
+	        _this.__started = false;
+	        _this.__channelId = channelId;
+	        _this.__accessToken = accessToken;
+	        return _this;
 	    }
 	    Player.prototype.start = function () {
 	        this.__startFetching();
@@ -297,9 +298,10 @@
 	var SyncClock = (function (_super) {
 	    __extends(SyncClock, _super);
 	    function SyncClock(serverDate) {
-	        _super.call(this);
-	        this.__offset = serverDate - Date.now();
-	        this.debug("Synchronized clock: offset = " + this.__offset + " ms");
+	        var _this = _super.call(this) || this;
+	        _this.__offset = serverDate - Date.now();
+	        _this.debug("Synchronized clock: offset = " + _this.__offset + " ms");
+	        return _this;
 	    }
 	    SyncClock.makeAsync = function () {
 	        var promise = new Promise(function (resolve, reject) {
@@ -539,16 +541,17 @@
 	var Track = (function (_super) {
 	    __extends(Track, _super);
 	    function Track(accessToken, id, fileId, fileUrl, cueInAt, cueOutAt, cueOffset, fadeInAt, fadeOutAt) {
-	        _super.call(this);
-	        this.__accessToken = accessToken;
-	        this.__id = id;
-	        this.__fileId = fileId;
-	        this.__fileUrl = fileUrl;
-	        this.__cueInAt = cueInAt;
-	        this.__cueOutAt = cueOutAt;
-	        this.__cueOffset = cueOffset;
-	        this.__fadeInAt = fadeInAt;
-	        this.__fadeOutAt = fadeOutAt;
+	        var _this = _super.call(this) || this;
+	        _this.__accessToken = accessToken;
+	        _this.__id = id;
+	        _this.__fileId = fileId;
+	        _this.__fileUrl = fileUrl;
+	        _this.__cueInAt = cueInAt;
+	        _this.__cueOutAt = cueOutAt;
+	        _this.__cueOffset = cueOffset;
+	        _this.__fadeInAt = fadeInAt;
+	        _this.__fadeOutAt = fadeOutAt;
+	        return _this;
 	    }
 	    Track.prototype.getId = function () {
 	        return this.__id;
@@ -591,7 +594,7 @@
 	                '&a[]=affiliate_schemas.kind' +
 	                '&a[]=affiliate_items.id' +
 	                '&a[]=affiliate_items.affiliate_schema_id' +
-	                '&a[]=affiliate_items.affiliate_metadata' +
+	                '&a[]=affiliate_items.item_url' +
 	                '&a[]=metadata_schemas.id' +
 	                '&a[]=metadata_schemas.name' +
 	                '&a[]=metadata_schemas.key' +
@@ -659,9 +662,10 @@
 
 /***/ },
 /* 8 */
-/***/ function(module, exports) {
+/***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
+	var AffiliateInfo_1 = __webpack_require__(9);
 	var TrackInfo = (function () {
 	    function TrackInfo(name, metadata, affiliates) {
 	        this.__name = name;
@@ -686,13 +690,13 @@
 	            var metadataItem = _e[_d];
 	            var key = metadataSchemas[metadataItem['metadata_schema_id']].key;
 	            var kind = metadataSchemas[metadataItem['metadata_schema_id']].kind;
-	            var value = metadataItem[("value_" + kind)];
+	            var value = metadataItem["value_" + kind];
 	            metadata[key] = value;
 	        }
 	        for (var _f = 0, _g = data['affiliate_items']; _f < _g.length; _f++) {
 	            var affiliateItem = _g[_f];
 	            var key = affiliateSchemas[affiliateItem['affiliate_schema_id']].key;
-	            var value = affiliateItem['affiliate_metadata'];
+	            var value = new AffiliateInfo_1.AffiliateInfo(affiliateItem);
 	            affiliates[key] = value;
 	        }
 	        return new TrackInfo(name, metadata, affiliates);
@@ -713,6 +717,26 @@
 
 /***/ },
 /* 9 */
+/***/ function(module, exports) {
+
+	"use strict";
+	var AffiliateInfo = (function () {
+	    function AffiliateInfo(affiliateItem) {
+	        this.__affiliateItem = affiliateItem;
+	    }
+	    AffiliateInfo.prototype.hasItem = function () {
+	        return this.__affiliateItem['item_url'] !== null;
+	    };
+	    AffiliateInfo.prototype.getItemUrl = function () {
+	        return this.__affiliateItem['item_url'];
+	    };
+	    return AffiliateInfo;
+	}());
+	exports.AffiliateInfo = AffiliateInfo;
+
+
+/***/ },
+/* 10 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -721,14 +745,15 @@
 	    function __() { this.constructor = d; }
 	    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 	};
-	var Factory_1 = __webpack_require__(10);
+	var Factory_1 = __webpack_require__(11);
 	var Base_1 = __webpack_require__(2);
 	var AudioManager = (function (_super) {
 	    __extends(AudioManager, _super);
 	    function AudioManager() {
-	        _super.apply(this, arguments);
-	        this.__audioPlayers = {};
-	        this.__volume = 1.0;
+	        var _this = _super !== null && _super.apply(this, arguments) || this;
+	        _this.__audioPlayers = {};
+	        _this.__volume = 1.0;
+	        return _this;
 	    }
 	    AudioManager.prototype.update = function (playlist, clock) {
 	        var tracks = playlist.getTracks();
@@ -802,11 +827,11 @@
 
 
 /***/ },
-/* 10 */
+/* 11 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
-	var HTMLPlayer_1 = __webpack_require__(11);
+	var HTMLPlayer_1 = __webpack_require__(12);
 	var Factory = (function () {
 	    function Factory() {
 	    }
@@ -819,7 +844,7 @@
 
 
 /***/ },
-/* 11 */
+/* 12 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -832,14 +857,15 @@
 	var HTMLPlayer = (function (_super) {
 	    __extends(HTMLPlayer, _super);
 	    function HTMLPlayer(track, clock) {
-	        _super.call(this);
-	        this.__started = false;
-	        this.__cueInTimeoutId = 0;
-	        this.__restartTimeoutId = 0;
-	        this.__positionIntervalId = 0;
-	        this.__volume = 1.0;
-	        this.__track = track;
-	        this.__clock = clock;
+	        var _this = _super.call(this) || this;
+	        _this.__started = false;
+	        _this.__cueInTimeoutId = 0;
+	        _this.__restartTimeoutId = 0;
+	        _this.__positionIntervalId = 0;
+	        _this.__volume = 1.0;
+	        _this.__track = track;
+	        _this.__clock = clock;
+	        return _this;
 	    }
 	    HTMLPlayer.prototype.start = function () {
 	        if (!this.__started) {
@@ -1018,11 +1044,13 @@
 	        }
 	    };
 	    HTMLPlayer.prototype.__onPositionInterval = function () {
-	        var position = Math.round(this.__audio.currentTime * 1000);
-	        var cueInAt = this.__track.getCueInAt().valueOf();
-	        var cueOutAt = this.__track.getCueOutAt().valueOf();
-	        var duration = cueOutAt - cueInAt;
-	        this._trigger('position', this.__track, position, duration);
+	        if (this.__audio) {
+	            var position = Math.round(this.__audio.currentTime * 1000);
+	            var cueInAt = this.__track.getCueInAt().valueOf();
+	            var cueOutAt = this.__track.getCueOutAt().valueOf();
+	            var duration = cueOutAt - cueInAt;
+	            this._trigger('position', this.__track, position, duration);
+	        }
 	    };
 	    return HTMLPlayer;
 	}(Base_1.Base));
