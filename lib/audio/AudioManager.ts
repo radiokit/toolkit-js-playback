@@ -135,7 +135,7 @@ export class AudioManager extends Base {
       const iteratedTrack = iteratedAudioPlayer.getTrack();
 
       if(iteratedAudioPlayer !== audioPlayer && iteratedTrack.getCueInAt() <= this.__currentTrack.getCueInAt()) {
-        this.debug(`Applying fade out to player ${iteratedAudioPlayer.getTrack().getId()} so it does not overlap with player ${audioPlayer.getTrack().getId()}`);
+        this.debug(`Applying fade out to player for track ${iteratedAudioPlayer.getTrack().getId()} so it does not overlap with player for track ${audioPlayer.getTrack().getId()}`);
         iteratedAudioPlayer.fadeOut(1000);
       }
     }
