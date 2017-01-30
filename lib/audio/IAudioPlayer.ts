@@ -6,4 +6,5 @@ export interface IAudioPlayer {
   stop() : IAudioPlayer;
   setVolume(volume: number) : IAudioPlayer;
   getTrack() : Track;
+  fadeOut(duration: number) : IAudioPlayer;
 }

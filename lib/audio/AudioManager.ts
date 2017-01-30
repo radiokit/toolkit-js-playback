@@ -126,13 +126,24 @@ export class AudioManager extends Base {
   }
 
 
-  private __onAudioPlayerPlaybackStarted(track: Track) : void {
-    this.__currentTrack = track;
-    this._trigger('playback-started', track);
+  private __onAudioPlayerPlaybackStarted(audioPlayer: IAudioPlayer) : void {
+    this.__currentTrack = audioPlayer.getTrack();
+    this._trigger('playback-started', this.__currentTrack);
+
+    for(let id in this.__audioPlayers) {
+      const iteratedAudioPlayer = this.__audioPlayers[id];
+      const iteratedTrack = iteratedAudioPlayer.getTrack();
+
+      if(iteratedAudioPlayer !== audioPlayer && iteratedTrack.getCueInAt() <= this.__currentTrack.getCueInAt()) {
+        this.debug(`Applying fade out to player ${iteratedAudioPlayer.getTrack().getId()} so it does not overlap with player ${audioPlayer.getTrack().getId()}`);
+        iteratedAudioPlayer.fadeOut(1000);
+      }
+    }
   }
 
 
-  private __onAudioPlayerPosition(track: Track, position: number, duration: number) : void {
+  private __onAudioPlayerPosition(audioPlayer: IAudioPlayer, position: number, duration: number) : void {
+    const track = audioPlayer.getTrack();
     if(track === this.__currentTrack) {
       this._trigger('position', track, position, duration);
     }

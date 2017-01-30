@@ -4,6 +4,8 @@ import { SyncClock } from '../clock/SyncClock';
 import { Base } from '../Base';
 
 
+const FADE_OUT_INTERVAL = 25;
+
 /**
  * This class wraps HTML5 <audio> tag into a player that is capable of playing
  * sound from a given source at right time.
@@ -17,15 +19,16 @@ import { Base } from '../Base';
  *   when the position is updated
  */
 export class HTMLPlayer extends Base implements IAudioPlayer {
-  private __track:              Track;
-  private __clock:              SyncClock;
-  private __audio:              HTMLAudioElement;
-  private __started:            boolean = false;
-  private __cueInTimeoutId:     number = 0;
-  private __restartTimeoutId:   number = 0;
-  private __positionIntervalId: number = 0;
-  private __volume:             number = 1.0;
-
+  private __track:                Track;
+  private __clock:                SyncClock;
+  private __audio:                HTMLAudioElement;
+  private __started:              boolean = false;
+  private __cueInTimeoutId:       number = 0;
+  private __restartTimeoutId:     number = 0;
+  private __positionIntervalId:   number = 0;
+  private __volume:               number = 1.0;
+  private __fadeVolumeMultiplier: number = 1.0;
+  private __fadeIntervalId:       number = 0;
 
   constructor(track: Track, clock: SyncClock) {
     super();
@@ -53,7 +56,6 @@ export class HTMLPlayer extends Base implements IAudioPlayer {
     if(!this.__started) {
       this.debug('Starting');
       this.__started = true;
-
       this.__preparePlayback();
 
     } else {
@@ -77,7 +79,6 @@ export class HTMLPlayer extends Base implements IAudioPlayer {
     if(this.__started) {
       this.debug('Stopping');
       this.__stopPlayback();
-
       this.__started = false;
 
     } else {
@@ -103,7 +104,7 @@ export class HTMLPlayer extends Base implements IAudioPlayer {
     this.__volume = volume;
 
     if(this.__audio) {
-      this.__audio.volume = volume;
+      this.__audio.volume = volume * this.__fadeVolumeMultiplier;
     }
 
     return this;
@@ -115,6 +116,36 @@ export class HTMLPlayer extends Base implements IAudioPlayer {
    */
   public getTrack() : Track {
     return this.__track;
+  }
+
+
+  /**
+   * Starts fade out of given duration (in milliseconds).
+   */
+  public fadeOut(duration: number) : IAudioPlayer {
+    if(this.__fadeIntervalId === 0) {
+      this.debug(`Starting fade out of duration ${duration} ms`);
+      const step = FADE_OUT_INTERVAL / duration;
+
+      this.__fadeIntervalId = setInterval(() => {
+        this.__fadeVolumeMultiplier -= step;
+
+        if(this.__fadeVolumeMultiplier <= 0) {
+          this.__fadeVolumeMultiplier = 0;
+          clearInterval(this.__fadeIntervalId);
+          this.__fadeIntervalId = 0;
+          this.debug(`Finishing fade out`);
+        }
+
+        this.debug(`Fade out: ${this.__fadeVolumeMultiplier}%`);
+        if(this.__audio) {
+          this.__audio.volume = this.__volume * this.__fadeVolumeMultiplier;
+        }
+
+      }, FADE_OUT_INTERVAL);
+    }
+
+    return this;
   }
 
 
@@ -225,6 +256,8 @@ export class HTMLPlayer extends Base implements IAudioPlayer {
 
   private __preparePlayback() : void {
     this.debug('Preparing playback');
+    this.__fadeVolumeMultiplier = 1.0;
+
     this.__audio = new Audio();
 
     // Set proper volume
@@ -283,7 +316,7 @@ export class HTMLPlayer extends Base implements IAudioPlayer {
     this.__audio.onended = this.__onAudioEnded.bind(this);
     this.__audio.play();
 
-    this._trigger('playback-started', this.__track);
+    this._trigger('playback-started', this);
   }
 
 
@@ -304,6 +337,11 @@ export class HTMLPlayer extends Base implements IAudioPlayer {
       this.__audio.src = '';
       delete this.__audio;
       this.__audio = undefined;
+    }
+
+    if(this.__fadeIntervalId !== 0) {
+      clearInterval(this.__fadeIntervalId);
+      this.__fadeIntervalId = 0;
     }
 
     if(this.__cueInTimeoutId !== 0) {
@@ -342,7 +380,7 @@ export class HTMLPlayer extends Base implements IAudioPlayer {
       const cueOutAt = this.__track.getCueOutAt().valueOf();
       const duration = cueOutAt - cueInAt;
 
-      this._trigger('position', this.__track, position, duration);
+      this._trigger('position', this, position, duration);
     }
   }
 }
