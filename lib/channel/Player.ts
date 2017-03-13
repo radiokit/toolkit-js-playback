@@ -23,7 +23,9 @@ export class Player extends Base {
   private __fetchTimeoutId:   number = 0;
   private __audioManager:     AudioManager;
   private __started:          boolean;
+  private __playlist:         Playlist = null;
   private __clock?:           SyncClock = null;
+  private __isFetchingRunning:boolean = false;
   private __playlistFetcher?: PlaylistFetcher = null;
   private __volume:           number = 1.0;
 
@@ -36,9 +38,9 @@ export class Player extends Base {
     this.__accessToken = accessToken;
   }
 
-
   public start() : Player {
     this.__startFetching();
+
     this.__started = true;
 
     this.__audioManager = new AudioManager();
@@ -50,7 +52,6 @@ export class Player extends Base {
 
 
   public stop() : Player {
-    this.__stopFetching();
     this.__started = false;
 
     if(this.__audioManager) {
@@ -90,9 +91,28 @@ export class Player extends Base {
     return this.__volume;
   }
 
+  public getPlayList() : Playlist {
+    return this.__playlist;
+  }
+
 
   public isStarted() : boolean {
     return this.__started;
+  }
+
+
+  public fetchPlaylist() : Player {
+    this.__startFetching();
+
+    return this;
+  }
+
+  public stopFetching() : void {
+    this.__isFetchingRunning = false;
+    if(this.__fetchTimeoutId !== 0) {
+      clearTimeout(this.__fetchTimeoutId);
+      this.__fetchTimeoutId = 0;
+    }
   }
 
 
@@ -102,14 +122,9 @@ export class Player extends Base {
 
 
   private __startFetching() : void {
-    this.__fetchOnceAndRepeat();
-  }
-
-
-  private __stopFetching() : void {
-    if(this.__fetchTimeoutId !== 0) {
-      clearTimeout(this.__fetchTimeoutId);
-      this.__fetchTimeoutId = 0;
+    if (!this.__isFetchingRunning) {
+      this.__isFetchingRunning = true;
+      this.__fetchOnceAndRepeat();
     }
   }
 
@@ -161,9 +176,9 @@ export class Player extends Base {
   private __fetchOnceAndRepeat() : void {
     this.__fetchOnce()
       .then((playlist) => {
-        if(this.__started) {
-          this.__audioManager.update(playlist, this.__clock);
-        }
+        this.__playlist = playlist;
+        this.__onPlayListFetched(playlist);
+        this.__started && this.__audioManager.update(this.__playlist, this.__clock);
         this.__scheduleNextFetch();
       })
       .catch((error) => {
@@ -173,7 +188,7 @@ export class Player extends Base {
 
 
   private __scheduleNextFetch() : void {
-    if(this.__started) {
+    if(this.__isFetchingRunning) {
       const timeout = 2000 + Math.round(Math.random() * 250);
       this.debug(`Fetch: Scheduling next fetch in ${timeout} ms`);
       this.__fetchTimeoutId = setTimeout(() => {
@@ -183,6 +198,9 @@ export class Player extends Base {
     }
   }
 
+  private __onPlayListFetched(playlist: Playlist) : void {
+    this._trigger('playlist-fetched', playlist);
+  }
 
   private __onAudioManagerPosition(track: Track, position: number, duration: number) : void {
     this._trigger('track-position', track, position, duration);
