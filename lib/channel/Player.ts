@@ -25,7 +25,7 @@ export class Player extends Base {
   private __started:          boolean;
   private __playlist:         Playlist = null;
   private __clock?:           SyncClock = null;
-  private __isFetchingRunning:boolean = false;
+  private __fetching:         boolean = false;
   private __playlistFetcher?: PlaylistFetcher = null;
   private __volume:           number = 1.0;
 
@@ -91,10 +91,6 @@ export class Player extends Base {
     return this.__volume;
   }
 
-  public getPlayList() : Playlist {
-    return this.__playlist;
-  }
-
 
   public isStarted() : boolean {
     return this.__started;
@@ -108,7 +104,7 @@ export class Player extends Base {
   }
 
   public stopFetching() : void {
-    this.__isFetchingRunning = false;
+    this.__fetching = false;
     if(this.__fetchTimeoutId !== 0) {
       clearTimeout(this.__fetchTimeoutId);
       this.__fetchTimeoutId = 0;
@@ -122,8 +118,8 @@ export class Player extends Base {
 
 
   private __startFetching() : void {
-    if (!this.__isFetchingRunning) {
-      this.__isFetchingRunning = true;
+    if (!this.__fetching) {
+      this.__fetching = true;
       this.__fetchOnceAndRepeat();
     }
   }
@@ -188,7 +184,7 @@ export class Player extends Base {
 
 
   private __scheduleNextFetch() : void {
-    if(this.__isFetchingRunning) {
+    if(this.__fetching) {
       const timeout = 2000 + Math.round(Math.random() * 250);
       this.debug(`Fetch: Scheduling next fetch in ${timeout} ms`);
       this.__fetchTimeoutId = setTimeout(() => {

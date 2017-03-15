@@ -86,7 +86,7 @@
 	        _this.__fetchTimeoutId = 0;
 	        _this.__playlist = null;
 	        _this.__clock = null;
-	        _this.__isFetchingRunning = false;
+	        _this.__fetching = false;
 	        _this.__playlistFetcher = null;
 	        _this.__volume = 1.0;
 	        _this.__started = false;
@@ -127,9 +127,6 @@
 	    Player.prototype.getVolume = function () {
 	        return this.__volume;
 	    };
-	    Player.prototype.getPlayList = function () {
-	        return this.__playlist;
-	    };
 	    Player.prototype.isStarted = function () {
 	        return this.__started;
 	    };
@@ -138,7 +135,7 @@
 	        return this;
 	    };
 	    Player.prototype.stopFetching = function () {
-	        this.__isFetchingRunning = false;
+	        this.__fetching = false;
 	        if (this.__fetchTimeoutId !== 0) {
 	            clearTimeout(this.__fetchTimeoutId);
 	            this.__fetchTimeoutId = 0;
@@ -148,8 +145,8 @@
 	        return this['constructor']['name'] + " " + this.__channelId;
 	    };
 	    Player.prototype.__startFetching = function () {
-	        if (!this.__isFetchingRunning) {
-	            this.__isFetchingRunning = true;
+	        if (!this.__fetching) {
+	            this.__fetching = true;
 	            this.__fetchOnceAndRepeat();
 	        }
 	    };
@@ -196,7 +193,6 @@
 	    };
 	    Player.prototype.__fetchOnceAndRepeat = function () {
 	        var _this = this;
-	        this.debug("FETCH ONCE AND REPEAT");
 	        this.__fetchOnce()
 	            .then(function (playlist) {
 	            _this.__playlist = playlist;
@@ -210,7 +206,7 @@
 	    };
 	    Player.prototype.__scheduleNextFetch = function () {
 	        var _this = this;
-	        if (this.__isFetchingRunning) {
+	        if (this.__fetching) {
 	            var timeout = 2000 + Math.round(Math.random() * 250);
 	            this.debug("Fetch: Scheduling next fetch in " + timeout + " ms");
 	            this.__fetchTimeoutId = setTimeout(function () {
