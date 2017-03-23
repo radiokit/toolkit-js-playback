@@ -9,12 +9,17 @@ import { PlaylistResolver } from './PlaylistResolver';
  * current time plus small margin.
  */
 export class PlaylistFetcher {
+  private __options: any = { from: 20, to: 600 };
   private __clock: SyncClock;
   private __channelId: string;
   private __accessToken: string;
 
 
-  constructor(accessToken: string, channelId: string, clock: SyncClock) {
+  constructor(accessToken: string, channelId: string, clock: SyncClock, options = {}) {
+    this.__options = {
+      ...this.__options,
+      ...options,
+    }
     this.__clock = clock;
     this.__channelId = channelId;
     this.__accessToken = accessToken;
@@ -38,7 +43,7 @@ export class PlaylistFetcher {
         '&a[]=cue_offset' +
         '&a[]=fade_in_at' +
         '&a[]=fade_out_at' +
-        '&s[]=cue%20' + encodeURIComponent(new Date(now).toISOString()) + '%2020%20600' + // seek 20 seconds back, 600 seconds forward
+        '&s[]=cue%20' + encodeURIComponent(new Date(now).toISOString()) + `%20${this.__options.from}%20${this.__options.to}` + // seek 20 seconds back, 600 seconds forward
         '&c[references][]=deq%20broadcast_channel_id%20' + encodeURIComponent(this.__channelId) +
         '&o[]=cue_in_at%20asc';
 

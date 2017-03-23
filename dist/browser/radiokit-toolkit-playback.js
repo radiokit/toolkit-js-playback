@@ -74,6 +74,14 @@
 	        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 	    };
 	})();
+	var __assign = (this && this.__assign) || Object.assign || function(t) {
+	    for (var s, i = 1, n = arguments.length; i < n; i++) {
+	        s = arguments[i];
+	        for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+	            t[p] = s[p];
+	    }
+	    return t;
+	};
 	Object.defineProperty(exports, "__esModule", { value: true });
 	var Base_1 = __webpack_require__(2);
 	var SyncClock_1 = __webpack_require__(3);
@@ -81,7 +89,8 @@
 	var AudioManager_1 = __webpack_require__(10);
 	var Player = (function (_super) {
 	    __extends(Player, _super);
-	    function Player(channelId, accessToken) {
+	    function Player(channelId, accessToken, options) {
+	        if (options === void 0) { options = {}; }
 	        var _this = _super.call(this) || this;
 	        _this.__fetchTimeoutId = 0;
 	        _this.__playlist = null;
@@ -89,6 +98,8 @@
 	        _this.__fetching = false;
 	        _this.__playlistFetcher = null;
 	        _this.__volume = 1.0;
+	        _this.__options = { from: 20, to: 600 };
+	        _this.__options = __assign({}, _this.__options, options);
 	        _this.__started = false;
 	        _this.__channelId = channelId;
 	        _this.__accessToken = accessToken;
@@ -159,7 +170,7 @@
 	                    .then(function (clock) {
 	                    _this.debug("Fetch: Synchronized clock");
 	                    _this.__clock = clock;
-	                    _this.__playlistFetcher = new PlaylistFetcher_1.PlaylistFetcher(_this.__accessToken, _this.__channelId, clock);
+	                    _this.__playlistFetcher = new PlaylistFetcher_1.PlaylistFetcher(_this.__accessToken, _this.__channelId, clock, { from: _this.__options.from, to: _this.__options.to });
 	                    return _this.__fetchPlaylist(resolve, reject);
 	                })
 	                    .catch(function (error) {
@@ -374,10 +385,21 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
+	var __assign = (this && this.__assign) || Object.assign || function(t) {
+	    for (var s, i = 1, n = arguments.length; i < n; i++) {
+	        s = arguments[i];
+	        for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+	            t[p] = s[p];
+	    }
+	    return t;
+	};
 	Object.defineProperty(exports, "__esModule", { value: true });
 	var PlaylistResolver_1 = __webpack_require__(5);
 	var PlaylistFetcher = (function () {
-	    function PlaylistFetcher(accessToken, channelId, clock) {
+	    function PlaylistFetcher(accessToken, channelId, clock, options) {
+	        if (options === void 0) { options = {}; }
+	        this.__options = { from: 20, to: 600 };
+	        this.__options = __assign({}, this.__options, options);
 	        this.__clock = clock;
 	        this.__channelId = channelId;
 	        this.__accessToken = accessToken;
@@ -396,7 +418,7 @@
 	                '&a[]=cue_offset' +
 	                '&a[]=fade_in_at' +
 	                '&a[]=fade_out_at' +
-	                '&s[]=cue%20' + encodeURIComponent(new Date(now).toISOString()) + '%2020%20600' +
+	                '&s[]=cue%20' + encodeURIComponent(new Date(now).toISOString()) + ("%20" + _this.__options.from + "%20" + _this.__options.to) +
 	                '&c[references][]=deq%20broadcast_channel_id%20' + encodeURIComponent(_this.__channelId) +
 	                '&o[]=cue_in_at%20asc';
 	            xhr.open('GET', url, true);

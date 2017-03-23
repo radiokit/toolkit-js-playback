@@ -28,11 +28,16 @@ export class Player extends Base {
   private __fetching:         boolean = false;
   private __playlistFetcher?: PlaylistFetcher = null;
   private __volume:           number = 1.0;
+  private __options:          any = { from: 20, to: 600 };
 
 
-  constructor(channelId: string, accessToken: string) {
+  constructor(channelId: string, accessToken: string, options = {}) {
     super();
 
+    this.__options = {
+      ...this.__options,
+      ...options
+    }
     this.__started = false;
     this.__channelId = channelId;
     this.__accessToken = accessToken;
@@ -133,7 +138,11 @@ export class Player extends Base {
           .then((clock) => {
             this.debug("Fetch: Synchronized clock");
             this.__clock = clock;
-            this.__playlistFetcher = new PlaylistFetcher(this.__accessToken, this.__channelId, clock);
+            this.__playlistFetcher = new PlaylistFetcher(
+              this.__accessToken,
+              this.__channelId, clock,
+              { from: this.__options.from, to: this.__options.to }
+            );
 
             return this.__fetchPlaylist(resolve, reject);
           })
