@@ -418,7 +418,8 @@
 	                '&a[]=cue_offset' +
 	                '&a[]=fade_in_at' +
 	                '&a[]=fade_out_at' +
-	                '&s[]=cue%20' + encodeURIComponent(new Date(now).toISOString()) + ("%20" + _this.__options.from + "%20" + _this.__options.to) +
+	                '&s[]=cue%20' + encodeURIComponent(new Date(now).toISOString()) +
+	                encodeURIComponent(_this.__options.from + " " + _this.__options.to) +
 	                '&c[references][]=deq%20broadcast_channel_id%20' + encodeURIComponent(_this.__channelId) +
 	                '&o[]=cue_in_at%20asc';
 	            xhr.open('GET', url, true);
