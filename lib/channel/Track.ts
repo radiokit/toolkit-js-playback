@@ -82,15 +82,6 @@ export class Track extends Base {
         '&a[]=extra' +
         '&a[]=public_url' +
 
-        '&a[]=affiliate_schemas.id' +
-        '&a[]=affiliate_schemas.name' +
-        '&a[]=affiliate_schemas.key' +
-        '&a[]=affiliate_schemas.kind' +
-
-        '&a[]=affiliate_items.id' +
-        '&a[]=affiliate_items.affiliate_schema_id' +
-        '&a[]=affiliate_items.item_url' +
-
         '&a[]=metadata_schemas.id' +
         '&a[]=metadata_schemas.name' +
         '&a[]=metadata_schemas.key' +
@@ -114,8 +105,6 @@ export class Track extends Base {
 
         '&j[]=metadata_schemas' +
         '&j[]=metadata_items' +
-        '&j[]=affiliate_schemas' +
-        '&j[]=affiliate_items' +
 
         '&c[id][]=eq%20' + encodeURIComponent(this.__fileId);
 

@@ -27,17 +27,6 @@
           metadataText += '</ul>';
 
           document.getElementById('track-metadata').innerHTML = metadataText;
-
-          // Affiliates
-          var affiliatesInfo = trackInfo.getAffiliates();
-          var affiliatesText = 'AFFILIATES:<ul>';
-          affiliatesKeys = Object.keys(affiliatesInfo);
-          for(var i = 0; i < affiliatesKeys.length; i++) {
-            affiliatesText += '<li><b>' + affiliatesKeys[i] + '</b>: ' + JSON.stringify(affiliatesInfo[affiliatesKeys[i]].getItemUrl()) + '</li>';
-          }
-          affiliatesText += '</ul>';
-
-          document.getElementById('track-affiliates').innerHTML = affiliatesText;
         })
         .catch(function(reason) {
           throw reason;
@@ -110,10 +99,6 @@
   <div id="track-metadata" style="width: 400px; text-align: left; margin: 0 auto"></div>
 
   <br>
-
-  <div id="track-affiliates" style="width: 400px; text-align: left; margin: 0 auto"></div>
-
-  <br />
 
   <div id="playlist" style="width: 400px; text-align: left; margin: 0 auto"></div>
 
