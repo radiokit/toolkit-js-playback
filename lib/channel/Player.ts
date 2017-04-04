@@ -4,6 +4,7 @@ import { Playlist } from '../channel/Playlist';
 import { Track } from '../channel/Track';
 import { PlaylistFetcher } from '../channel/PlaylistFetcher';
 import { AudioManager } from '../audio/AudioManager';
+import { StreamManager } from '../audio/StreamManager';
 
 
 /**
@@ -13,22 +14,25 @@ import { AudioManager } from '../audio/AudioManager';
  * It emits the following events:
  *
  * - error-network (no args) - when network error was encountered
- * - track-playback-started (arg1: track) - when playback starts
+ * - playback-started (no args) - when playback starts
+ * - track-playback-started (arg1: track) - when track playback starts
  * - track-position (arg1: track, arg1: position in ms, arg2: duration in ms) -
  *   when the position is updated for the last track for which playback has started
  */
 export class Player extends Base {
-  private __channelId:        string;
-  private __accessToken:      string;
-  private __fetchTimeoutId:   number = 0;
-  private __audioManager:     AudioManager;
-  private __started:          boolean;
-  private __playlist:         Playlist = null;
-  private __clock?:           SyncClock = null;
-  private __fetching:         boolean = false;
-  private __playlistFetcher?: PlaylistFetcher = null;
-  private __volume:           number = 1.0;
-  private __options:          any = { from: 20, to: 600 };
+  private __channelId:              string;
+  private __accessToken:            string;
+  private __fetchTimeoutId:         number = 0;
+  private __audioManager:           AudioManager;
+  private __streamManager:          StreamManager;
+  private __playbackStartedEmitted: boolean = false;
+  private __started:                boolean;
+  private __playlist:               Playlist = null;
+  private __clock?:                 SyncClock = null;
+  private __fetching:               boolean = false;
+  private __playlistFetcher?:       PlaylistFetcher = null;
+  private __volume:                 number = 1.0;
+  private __options:                any = { from: 20, to: 600 };
 
 
   constructor(channelId: string, accessToken: string, options = {}) {
@@ -43,35 +47,63 @@ export class Player extends Base {
     this.__accessToken = accessToken;
   }
 
+
   public start() : Player {
-    this.__startFetching();
+    if(!this.__started) {
+      this.__startFetching();
 
-    this.__started = true;
+      this.__started = true;
+      this.__playbackStartedEmitted = false;
 
-    this.__audioManager = new AudioManager();
-    this.__audioManager.setVolume(this.__volume);
-    this.__audioManager.on('playback-started', this.__onAudioManagerPlaybackStarted.bind(this));
-    this.__audioManager.on('position', this.__onAudioManagerPosition.bind(this));
+      if(this.__supportsAudioManager()) {
+        this.debug("Using AudioManager");
+        this.__audioManager = new AudioManager();
+        this.__audioManager.setVolume(this.__volume);
+        this.__audioManager.on('playback-started', this.__onAudioManagerPlaybackStarted.bind(this));
+        this.__audioManager.on('position', this.__onAudioManagerPosition.bind(this));
+
+      } else {
+        this.debug("Using StreamManager");
+        this.__streamManager = new StreamManager(this.__channelId);
+        this.__streamManager.setVolume(this.__volume);
+        this.__streamManager.on('playback-started', this.__onStreamManagerPlaybackStarted.bind(this));
+        this.__streamManager.start();
+      }
+    }
+
     return this;
   }
 
 
   public stop() : Player {
-    this.__started = false;
+    if(this.__started) {
+      this.__started = false;
 
-    if(this.__audioManager) {
-      // Remove all event handlers to avoid memory leaks
-      this.__audioManager.offAll();
+      if(this.__audioManager) {
+        // Remove all event handlers to avoid memory leaks
+        this.__audioManager.offAll();
 
-      // Cleanup audio manager to avoid memory leaks
-      this.__audioManager.cleanup()
+        // Cleanup audio manager to avoid memory leaks
+        this.__audioManager.cleanup()
 
-      // Remove audio manager
-      delete this.__audioManager;
-      this.__audioManager = undefined;
+        // Remove audio manager
+        delete this.__audioManager;
+        this.__audioManager = undefined;
+
+      } else if(this.__streamManager) {
+        // Remove all event handlers to avoid memory leaks
+        this.__streamManager.offAll();
+
+        // Cleanup audio manager to avoid memory leaks
+        this.__streamManager.stop()
+
+        // Remove audio manager
+        delete this.__streamManager;
+        this.__streamManager = undefined;
+      }
+
+      return this;
     }
-
-    return this;
   }
 
 
@@ -108,17 +140,43 @@ export class Player extends Base {
     return this;
   }
 
+
   public stopFetching() : void {
-    this.__fetching = false;
-    if(this.__fetchTimeoutId !== 0) {
-      clearTimeout(this.__fetchTimeoutId);
-      this.__fetchTimeoutId = 0;
+    if(this.__fetching) {
+      this.__fetching = false;
+      if(this.__fetchTimeoutId !== 0) {
+        clearTimeout(this.__fetchTimeoutId);
+        this.__fetchTimeoutId = 0;
+      }
     }
   }
 
 
   protected _loggerTag() : string {
     return `${this['constructor']['name']} ${this.__channelId}`;
+  }
+
+
+  private __supportsAudioManager() : boolean {
+    return (
+      !this.__isAndroid() &&
+      !this.__isIPhone() &&
+      !this.__isSafari());
+  }
+
+
+  private __isAndroid() : boolean {
+    return navigator.userAgent.indexOf('Android') !== -1;
+  }
+
+
+  private __isIPhone() : boolean {
+    return navigator.userAgent.indexOf('iPhone') !== -1;
+  }
+
+
+  private __isSafari() : boolean {
+    return navigator.userAgent.indexOf('Chrome') === -1 && navigator.userAgent.indexOf('Safari') !== -1;
   }
 
 
@@ -183,7 +241,7 @@ export class Player extends Base {
       .then((playlist) => {
         this.__playlist = playlist;
         this.__onPlayListFetched(playlist);
-        this.__started && this.__audioManager.update(this.__playlist, this.__clock);
+        this.__started && this.__audioManager && this.__audioManager.update(this.__playlist, this.__clock);
         this.__scheduleNextFetch();
       })
       .catch((error) => {
@@ -213,6 +271,19 @@ export class Player extends Base {
 
 
   private __onAudioManagerPlaybackStarted(track: Track) : void {
+    if(!this.__playbackStartedEmitted) {
+      this._trigger('playback-started');
+      this.__playbackStartedEmitted = true;
+    }
+
     this._trigger('track-playback-started', track);
+  }
+
+
+  private __onStreamManagerPlaybackStarted() : void {
+    if(!this.__playbackStartedEmitted) {
+      this._trigger('playback-started');
+      this.__playbackStartedEmitted = true;
+    }
   }
 }

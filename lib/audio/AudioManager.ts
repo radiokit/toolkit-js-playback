@@ -62,10 +62,12 @@ export class AudioManager extends Base {
   /**
    * Stops all playback and removes associated audio players.
    */
-  public cleanup() : void {
+  public cleanup() : AudioManager {
     for(let id in this.__audioPlayers) {
       this.__removeAudioPlayer(id);
     }
+
+    return this;
   }
 
 
