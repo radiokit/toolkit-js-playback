@@ -4,7 +4,8 @@ import { Playlist } from '../channel/Playlist';
 import { Track } from '../channel/Track';
 import { PlaylistFetcher } from '../channel/PlaylistFetcher';
 import { AudioManager } from '../audio/AudioManager';
-
+import { StatsSender } from '../channel/StatsSender';
+import * as Fingerprint2 from 'fingerprintjs2';
 
 /**
  * This class represents a single channel (stream) that is broadcasted from
@@ -20,18 +21,23 @@ import { AudioManager } from '../audio/AudioManager';
 export class Player extends Base {
   private __channelId:        string;
   private __accessToken:      string;
+  private __targetId:         string;
   private __fetchTimeoutId:   number = 0;
+  private __statsTimeoutId:   number = 0;
   private __audioManager:     AudioManager;
   private __started:          boolean;
   private __playlist:         Playlist = null;
   private __clock?:           SyncClock = null;
   private __fetching:         boolean = false;
   private __playlistFetcher?: PlaylistFetcher = null;
+  private __statsSender?:     StatsSender = null;
   private __volume:           number = 1.0;
   private __options:          any = { from: 20, to: 600 };
+  private __userFingerprint:  string;
+  trackId:                    string;
 
 
-  constructor(channelId: string, accessToken: string, options = {}) {
+  constructor(channelId: string, accessToken: string, targetId: string, options = {}) {
     super();
 
     this.__options = {
@@ -41,12 +47,15 @@ export class Player extends Base {
     this.__started = false;
     this.__channelId = channelId;
     this.__accessToken = accessToken;
+    this.__targetId = targetId;
+    this.__generateUserFingerprint();
   }
 
   public start() : Player {
     this.__startFetching();
 
     this.__started = true;
+    this.__startSendingStats();
 
     this.__audioManager = new AudioManager();
     this.__audioManager.setVolume(this.__volume);
@@ -58,6 +67,7 @@ export class Player extends Base {
 
   public stop() : Player {
     this.__started = false;
+    this.__stopSendingStats();
 
     if(this.__audioManager) {
       // Remove all event handlers to avoid memory leaks
@@ -107,6 +117,14 @@ export class Player extends Base {
 
     return this;
   }
+
+
+  public setTrackId(trackId) : Player {
+    this.trackId = trackId;
+
+    return this;
+  }
+
 
   public stopFetching() : void {
     this.__fetching = false;
@@ -192,6 +210,74 @@ export class Player extends Base {
   }
 
 
+  private __stopSendingStats() : void {
+    if(this.__statsTimeoutId !== 0) {
+      clearTimeout(this.__statsTimeoutId);
+      this.__statsTimeoutId = 0;
+    }
+  }
+
+  private __startSendingStats() : void {
+    if (!this.__statsSender) {
+      this.__statsSender = new StatsSender(
+        this.__accessToken,
+        this.__channelId,
+        this.__targetId,
+        this.__userFingerprint
+      );
+    }
+
+    this.__sendStats();
+  }
+
+  private __sendStats() : void {
+    this.__sendStatsOnce()
+      .then((responseStatus) => {
+        if (responseStatus === "OK") {
+          this.debug(`Stats sent successfully.`);
+        } else {
+          this.debug(`Unable to send stats. Response code: ${responseStatus}`);
+        }
+        this.__scheduleNextSending();
+      })
+      .catch((error) => {
+        this.__scheduleNextSending();
+      });
+  }
+
+  private __scheduleNextSending() : void {
+    if(this.__started) {
+      const timeout = 15000 + Math.round(Math.random() * 250);
+      this.debug(`Stats Sender: Scheduling next send in ${timeout} ms`);
+      this.__statsTimeoutId = setTimeout(() => {
+        this.__statsTimeoutId = 0;
+        this.__sendStats();
+      }, timeout);
+    }
+  }
+
+  private __sendStatsOnce() : Promise<string> {
+    const promise = new Promise<string>((resolve: any, reject: any) => {
+      this.__sendStatsPromise(resolve, reject);
+    });
+
+    return promise;
+  }
+
+  private __sendStatsPromise(resolve: any, reject: any) : void {
+    this.debug("Start sending stats.");
+    this.__statsSender.sendAsync(this.trackId)
+      .then((requestResponse) => {
+        this.debug("Sending stats done.");
+        resolve(requestResponse);
+      })
+      .catch((error) => {
+        this.warn(`Send stats error: Unable to send stats (${error.message})`);
+        this._trigger('error-network');
+        reject(new Error(`Unable to send stats (${error.message})`));
+      });
+  }
+
   private __scheduleNextFetch() : void {
     if(this.__fetching) {
       const timeout = 2000 + Math.round(Math.random() * 250);
@@ -211,8 +297,13 @@ export class Player extends Base {
     this._trigger('track-position', track, position, duration);
   }
 
-
   private __onAudioManagerPlaybackStarted(track: Track) : void {
     this._trigger('track-playback-started', track);
+  }
+
+  private __generateUserFingerprint() : void {
+    new Fingerprint2().get((fingerprint) => {
+      this.__userFingerprint = fingerprint;
+    });
   }
 }

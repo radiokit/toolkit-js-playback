@@ -7,9 +7,10 @@
 
   <script>
   function init() {
-    window.player = new RadioKitToolkitPlayback.Channel.Player("fd9a7d1c-a387-40a0-b876-2799668d6f9d", "123");
+    window.player = new RadioKitToolkitPlayback.Channel.Player("fd9a7d1c-a387-40a0-b876-2799668d6f9d", "123", "230b4890-1a14-11e7-93ae-92361f002671");
     window.player.on('track-playback-started', function(track) {
       document.getElementById('track-id').innerHTML = 'TRACK ID: ' + track.getId();
+      window.player.setTrackId(track.getId());
 
       track.getInfoAsync()
         .then(function(trackInfo) {
