@@ -38,7 +38,7 @@ export class StatsSender {
         });
       } else {
         var method = 'PATCH';
-        var url = url + this.__statsId;
+        var url = url + '/' + this.__statsId;
         var requestParams = JSON.stringify({});
       }
 
@@ -64,7 +64,9 @@ export class StatsSender {
       xhr.onreadystatechange = () => {
         if(xhr.readyState === 4) {
           if(xhr.status === 200) {
-            const responseAsJson = JSON.parse(xhr.responseText);
+            resolve("OK");
+          } else if(xhr.status === 201) {
+            const responseAsJson = JSON.parse(xhr.responseText)['data'];
             this.__statsId = responseAsJson['id'];
             resolve("OK");
           } else {

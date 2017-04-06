@@ -1230,7 +1230,7 @@
 	            }
 	            else {
 	                var method = 'PATCH';
-	                var url = url + _this.__statsId;
+	                var url = url + '/' + _this.__statsId;
 	                var requestParams = JSON.stringify({});
 	            }
 	            xhr.open(method, url, true);
@@ -1251,7 +1251,10 @@
 	            xhr.onreadystatechange = function () {
 	                if (xhr.readyState === 4) {
 	                    if (xhr.status === 200) {
-	                        var responseAsJson = JSON.parse(xhr.responseText);
+	                        resolve("OK");
+	                    }
+	                    else if (xhr.status === 201) {
+	                        var responseAsJson = JSON.parse(xhr.responseText)['data'];
 	                        _this.__statsId = responseAsJson['id'];
 	                        resolve("OK");
 	                    }
