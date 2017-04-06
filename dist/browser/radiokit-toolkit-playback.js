@@ -1217,7 +1217,7 @@
 	        var _this = this;
 	        var promise = new Promise(function (resolve, reject) {
 	            var xhr = new XMLHttpRequest();
-	            var url = 'http://localhost:4010/api/stats/v1.0/raw_stream_play';
+	            var url = 'https://circumstances.radiokitapp-stag.org/api/stats/v1.0/raw_stream_play';
 	            if (typeof _this.__statsId === 'undefined') {
 	                var method = 'POST';
 	                var requestParams = JSON.stringify({

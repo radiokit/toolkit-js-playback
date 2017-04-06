@@ -25,7 +25,7 @@ export class StatsSender {
   public sendAsync() : Promise<string> {
     const promise = new Promise<string>((resolve: any, reject: any) => {
       const xhr = new XMLHttpRequest();
-      var url = 'http://localhost:4010/api/stats/v1.0/raw_stream_play';
+      var url = 'https://circumstances.radiokitapp-stag.org/api/stats/v1.0/raw_stream_play';
 
       if (typeof this.__statsId === 'undefined') {
         var method = 'POST';
