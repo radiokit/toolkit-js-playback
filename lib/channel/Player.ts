@@ -21,7 +21,6 @@ import * as Fingerprint2 from 'fingerprintjs2';
 export class Player extends Base {
   private __channelId:        string;
   private __accessToken:      string;
-  private __targetId:         string;
   private __fetchTimeoutId:   number = 0;
   private __statsTimeoutId:   number = 0;
   private __audioManager:     AudioManager;
@@ -32,12 +31,11 @@ export class Player extends Base {
   private __playlistFetcher?: PlaylistFetcher = null;
   private __statsSender?:     StatsSender = null;
   private __volume:           number = 1.0;
-  private __options:          any = { from: 20, to: 600 };
+  private __options:          any = { from: 20, to: 600, targets: [] };
   private __userFingerprint:  string;
-  trackId:                    string;
 
 
-  constructor(channelId: string, accessToken: string, targetId: string, options = {}) {
+  constructor(channelId: string, accessToken: string, options = {}) {
     super();
 
     this.__options = {
@@ -47,7 +45,6 @@ export class Player extends Base {
     this.__started = false;
     this.__channelId = channelId;
     this.__accessToken = accessToken;
-    this.__targetId = targetId;
     this.__generateUserFingerprint();
   }
 
@@ -114,13 +111,6 @@ export class Player extends Base {
 
   public fetchPlaylist() : Player {
     this.__startFetching();
-
-    return this;
-  }
-
-
-  public setTrackId(trackId) : Player {
-    this.trackId = trackId;
 
     return this;
   }
@@ -222,8 +212,8 @@ export class Player extends Base {
       this.__statsSender = new StatsSender(
         this.__accessToken,
         this.__channelId,
-        this.__targetId,
-        this.__userFingerprint
+        this.__userFingerprint,
+        this.__options,
       );
     }
 
@@ -231,7 +221,11 @@ export class Player extends Base {
   }
 
   private __sendStats() : void {
-    this.__sendStatsOnce()
+    const promise = new Promise<string>((resolve: any, reject: any) => {
+      this.__sendStatsPromise(resolve, reject);
+    });
+
+    promise
       .then((responseStatus) => {
         if (responseStatus === "OK") {
           this.debug(`Stats sent successfully.`);
@@ -256,17 +250,9 @@ export class Player extends Base {
     }
   }
 
-  private __sendStatsOnce() : Promise<string> {
-    const promise = new Promise<string>((resolve: any, reject: any) => {
-      this.__sendStatsPromise(resolve, reject);
-    });
-
-    return promise;
-  }
-
   private __sendStatsPromise(resolve: any, reject: any) : void {
     this.debug("Start sending stats.");
-    this.__statsSender.sendAsync(this.trackId)
+    this.__statsSender.sendAsync()
       .then((requestResponse) => {
         this.debug("Sending stats done.");
         resolve(requestResponse);

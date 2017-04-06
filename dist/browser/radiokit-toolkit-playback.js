@@ -91,7 +91,7 @@
 	var Fingerprint2 = __webpack_require__(13);
 	var Player = (function (_super) {
 	    __extends(Player, _super);
-	    function Player(channelId, accessToken, targetId, options) {
+	    function Player(channelId, accessToken, options) {
 	        if (options === void 0) { options = {}; }
 	        var _this = _super.call(this) || this;
 	        _this.__fetchTimeoutId = 0;
@@ -102,12 +102,11 @@
 	        _this.__playlistFetcher = null;
 	        _this.__statsSender = null;
 	        _this.__volume = 1.0;
-	        _this.__options = { from: 20, to: 600 };
+	        _this.__options = { from: 20, to: 600, targets: [] };
 	        _this.__options = __assign({}, _this.__options, options);
 	        _this.__started = false;
 	        _this.__channelId = channelId;
 	        _this.__accessToken = accessToken;
-	        _this.__targetId = targetId;
 	        _this.__generateUserFingerprint();
 	        return _this;
 	    }
@@ -151,10 +150,6 @@
 	    };
 	    Player.prototype.fetchPlaylist = function () {
 	        this.__startFetching();
-	        return this;
-	    };
-	    Player.prototype.setTrackId = function (trackId) {
-	        this.trackId = trackId;
 	        return this;
 	    };
 	    Player.prototype.stopFetching = function () {
@@ -235,13 +230,16 @@
 	    };
 	    Player.prototype.__startSendingStats = function () {
 	        if (!this.__statsSender) {
-	            this.__statsSender = new StatsSender_1.StatsSender(this.__accessToken, this.__channelId, this.__targetId, this.__userFingerprint);
+	            this.__statsSender = new StatsSender_1.StatsSender(this.__accessToken, this.__channelId, this.__userFingerprint, this.__options);
 	        }
 	        this.__sendStats();
 	    };
 	    Player.prototype.__sendStats = function () {
 	        var _this = this;
-	        this.__sendStatsOnce()
+	        var promise = new Promise(function (resolve, reject) {
+	            _this.__sendStatsPromise(resolve, reject);
+	        });
+	        promise
 	            .then(function (responseStatus) {
 	            if (responseStatus === "OK") {
 	                _this.debug("Stats sent successfully.");
@@ -266,17 +264,10 @@
 	            }, timeout);
 	        }
 	    };
-	    Player.prototype.__sendStatsOnce = function () {
-	        var _this = this;
-	        var promise = new Promise(function (resolve, reject) {
-	            _this.__sendStatsPromise(resolve, reject);
-	        });
-	        return promise;
-	    };
 	    Player.prototype.__sendStatsPromise = function (resolve, reject) {
 	        var _this = this;
 	        this.debug("Start sending stats.");
-	        this.__statsSender.sendAsync(this.trackId)
+	        this.__statsSender.sendAsync()
 	            .then(function (requestResponse) {
 	            _this.debug("Sending stats done.");
 	            resolve(requestResponse);
@@ -1214,31 +1205,38 @@
 	};
 	Object.defineProperty(exports, "__esModule", { value: true });
 	var StatsSender = (function () {
-	    function StatsSender(accessToken, channelId, targetId, userFingerprint, options) {
+	    function StatsSender(accessToken, channelId, userFingerprint, options) {
 	        if (options === void 0) { options = {}; }
-	        this.__options = { from: 20, to: 600 };
+	        this.__options = { from: 20, to: 600, target: [] };
 	        this.__options = __assign({}, this.__options, options);
 	        this.__channelId = channelId;
 	        this.__accessToken = accessToken;
-	        this.__targetId = targetId;
 	        this.__userFingerprint = userFingerprint;
 	    }
-	    StatsSender.prototype.sendAsync = function (trackId) {
+	    StatsSender.prototype.sendAsync = function () {
 	        var _this = this;
 	        var promise = new Promise(function (resolve, reject) {
 	            var xhr = new XMLHttpRequest();
 	            var url = 'http://localhost:4010/api/stats/v1.0/raw_stream_play';
-	            var requestParams = JSON.stringify({
-	                raw_stream_play: {
-	                    user_fingerprint: _this.__userFingerprint,
-	                    channel_id: _this.__channelId,
-	                    target_id: _this.__targetId,
-	                    file_id: trackId,
-	                }
-	            });
-	            xhr.open('POST', url, true);
+	            if (typeof _this.__statsId === 'undefined') {
+	                var method = 'POST';
+	                var requestParams = JSON.stringify({
+	                    raw_stream_play: {
+	                        user_fingerprint: _this.__userFingerprint,
+	                        channel_id: _this.__channelId,
+	                        targets: _this.__options.targets,
+	                    }
+	                });
+	            }
+	            else {
+	                var method = 'PATCH';
+	                var url = url + _this.__statsId;
+	                var requestParams = JSON.stringify({});
+	            }
+	            xhr.open(method, url, true);
 	            xhr.setRequestHeader('Cache-Control', 'no-cache, must-revalidate');
 	            xhr.setRequestHeader('Authorization', "Bearer " + _this.__accessToken);
+	            xhr.setRequestHeader('Accept', 'application/json');
 	            xhr.setRequestHeader('Content-Type', 'application/json');
 	            xhr.timeout = 15000;
 	            xhr.onerror = function (e) {
@@ -1253,6 +1251,8 @@
 	            xhr.onreadystatechange = function () {
 	                if (xhr.readyState === 4) {
 	                    if (xhr.status === 200) {
+	                        var responseAsJson = JSON.parse(xhr.responseText);
+	                        _this.__statsId = responseAsJson['id'];
 	                        resolve("OK");
 	                    }
 	                    else {
