@@ -265,6 +265,7 @@
 	        if (this.__statsTimeoutId !== 0) {
 	            clearTimeout(this.__statsTimeoutId);
 	            this.__statsTimeoutId = 0;
+	            this.__statsSender = null;
 	        }
 	    };
 	    Player.prototype.__startSendingStats = function () {

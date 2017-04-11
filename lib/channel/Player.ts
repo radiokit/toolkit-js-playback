@@ -262,6 +262,7 @@ export class Player extends Base {
     if(this.__statsTimeoutId !== 0) {
       clearTimeout(this.__statsTimeoutId);
       this.__statsTimeoutId = 0;
+      this.__statsSender = null;
     }
   }
 
