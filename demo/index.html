@@ -7,7 +7,7 @@
 
   <script>
   function init() {
-    window.player = new RadioKitToolkitPlayback.Channel.Player("fd9a7d1c-a387-40a0-b876-2799668d6f9d", "123");
+    window.player = new RadioKitToolkitPlayback.Channel.Player("3d49ef93-a010-4649-b3ed-b0f99fe96173", "123", {targets: ["da0db47f-a653-4df3-b167-12c3ba398818", "144ca21d-b10e-476e-8f19-aa12082542d7"]});
     window.player.on('track-playback-started', function(track) {
       document.getElementById('track-id').innerHTML = 'TRACK ID: ' + track.getId();
 
