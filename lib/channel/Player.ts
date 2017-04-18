@@ -66,6 +66,7 @@ export class Player extends Base {
         this.debug("Using StreamManager");
         this.__streamManager = new StreamManager(this.__channelId);
         this.__streamManager.setVolume(this.__volume);
+        this.__streamManager.on('channel-metadata-update', this.__onStreamManagerChannelMetadataUpdate.bind(this));
         this.__streamManager.on('playback-started', this.__onStreamManagerPlaybackStarted.bind(this));
         this.__streamManager.start();
       }
@@ -285,5 +286,10 @@ export class Player extends Base {
       this._trigger('playback-started');
       this.__playbackStartedEmitted = true;
     }
+  }
+
+
+  private __onStreamManagerChannelMetadataUpdate(payload) : void {
+    this._trigger('channel-metadata-update', payload);
   }
 }

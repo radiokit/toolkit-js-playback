@@ -1,4 +1,6 @@
 import { Base } from '../Base';
+import { Socket, Channel } from 'phoenix';
+
 
 /**
  * This class contains stream manager that can play a regular icecast stream.
@@ -11,11 +13,15 @@ export class StreamManager extends Base {
   private __channelId:        string;
   private __started:          boolean = false;
   private __restartTimeoutId: number = 0;
+  private __socket:           Socket;
+  private __channel:          Channel;
+
 
   constructor(channelId: string) {
     super();
 
     this.__channelId = channelId;
+    this.__socket = new Socket("wss://agenda.radiokitapp.org/api/stream/v1.0");
   }
 
 
@@ -24,6 +30,7 @@ export class StreamManager extends Base {
       this.debug('Starting');
       this.__started = true;
       this.__startPlayback();
+      this.__subscribeMetadata();
 
     } else {
       throw new Error('Attempt to start Stream Manager that is already started');
@@ -37,6 +44,7 @@ export class StreamManager extends Base {
     if(this.__started) {
       this.debug('Stopping');
       this.__stopPlayback();
+      this.__unsubscribeMetadata();
       this.__started = false;
 
     } else {
@@ -96,6 +104,26 @@ export class StreamManager extends Base {
 
   private __onAudioSuspended(e) : void {
     this.warn('Suspended');
+  }
+
+
+  private __subscribeMetadata() : void {
+    this.__socket.connect();
+    this.__channel = this.__socket.channel(`broadcast:metadata:${this.__channelId}`);
+    this.__channel.on("update", payload => {
+      this.debug("Received metadata: payload = " + JSON.stringify(payload));
+      this._trigger("channel-metadata-update", payload);
+    })
+    this.__channel.join()
+      .receive("ok", ({messages}) => this.debug("Subscribed to metadata") )
+      .receive("error", ({reason}) => this.warn("Failed to subscribe to metadata: error = " + reason) )
+      .receive("timeout", () => this.warn("Failed to subscribe to metadata: timeout") )
+  }
+
+
+  private __unsubscribeMetadata() : void {
+    this.__channel.leave();
+    this.__socket.disconnect();
   }
 
 
