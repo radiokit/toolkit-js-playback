@@ -86,7 +86,7 @@ export class StreamManager extends Base {
 
 
   private __onAudioEnded(e) : void {
-    this.debug('EOS');
+    this.warn('EOS');
     this.__stopPlayback();
     this.__scheduleRestart();
   }
@@ -94,6 +94,11 @@ export class StreamManager extends Base {
 
   private __onAudioWaiting(e) : void {
     this.warn('Waiting');
+  }
+
+
+  private __onAudioPlaying(e) : void {
+    this.debug('Playing');
   }
 
 
@@ -146,9 +151,8 @@ export class StreamManager extends Base {
     this.__audio.onwaiting = this.__onAudioWaiting.bind(this);
     this.__audio.onstalled = this.__onAudioStalled.bind(this);
     this.__audio.onsuspend = this.__onAudioSuspended.bind(this);
+    this.__audio.onplaying = this.__onAudioPlaying.bind(this);
     this.__audio.play();
-
-    this._trigger('playback-started');
   }
 
 
@@ -160,6 +164,7 @@ export class StreamManager extends Base {
       this.__audio.onwaiting = undefined;
       this.__audio.onstalled = undefined;
       this.__audio.onsuspend = undefined;
+      this.__audio.onplaying = undefined;
       if(this.__audio.readyState == 4) {
         this.__audio.pause();
       }
