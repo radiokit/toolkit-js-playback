@@ -143,7 +143,7 @@ export class StreamManager extends Base {
     // Do not disable preloading - it causes issues on Safari
 
     // Get URL from the playlist
-    this.__audio.src = `http://cluster.radiokitstream.org/${this.__channelId}.mp3`;
+    this.__audio.src = `http://cluster.radiokitstream.org/${encodeURIComponent(this.__channelId)}.mp3`;
 
     // Set callbacks
     this.__audio.onerror = this.__onAudioError.bind(this);
