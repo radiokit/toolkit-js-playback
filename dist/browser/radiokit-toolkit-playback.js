@@ -45,7 +45,6 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
-	Object.defineProperty(exports, "__esModule", { value: true });
 	var Player_1 = __webpack_require__(1);
 	exports.Channel = {
 	    Player: Player_1.Player,
@@ -64,16 +63,11 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
-	var __extends = (this && this.__extends) || (function () {
-	    var extendStatics = Object.setPrototypeOf ||
-	        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-	        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-	    return function (d, b) {
-	        extendStatics(d, b);
-	        function __() { this.constructor = d; }
-	        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-	    };
-	})();
+	var __extends = (this && this.__extends) || function (d, b) {
+	    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+	    function __() { this.constructor = d; }
+	    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+	};
 	var __assign = (this && this.__assign) || Object.assign || function(t) {
 	    for (var s, i = 1, n = arguments.length; i < n; i++) {
 	        s = arguments[i];
@@ -82,7 +76,6 @@
 	    }
 	    return t;
 	};
-	Object.defineProperty(exports, "__esModule", { value: true });
 	var Base_1 = __webpack_require__(2);
 	var SyncClock_1 = __webpack_require__(3);
 	var PlaylistFetcher_1 = __webpack_require__(4);
@@ -298,7 +291,6 @@
 /***/ function(module, exports) {
 
 	"use strict";
-	Object.defineProperty(exports, "__esModule", { value: true });
 	var Base = (function () {
 	    function Base() {
 	        this.__events = {};
@@ -373,17 +365,11 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
-	var __extends = (this && this.__extends) || (function () {
-	    var extendStatics = Object.setPrototypeOf ||
-	        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-	        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-	    return function (d, b) {
-	        extendStatics(d, b);
-	        function __() { this.constructor = d; }
-	        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-	    };
-	})();
-	Object.defineProperty(exports, "__esModule", { value: true });
+	var __extends = (this && this.__extends) || function (d, b) {
+	    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+	    function __() { this.constructor = d; }
+	    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+	};
 	var Base_1 = __webpack_require__(2);
 	var SyncClock = (function (_super) {
 	    __extends(SyncClock, _super);
@@ -446,7 +432,6 @@
 	    }
 	    return t;
 	};
-	Object.defineProperty(exports, "__esModule", { value: true });
 	var PlaylistResolver_1 = __webpack_require__(5);
 	var PlaylistFetcher = (function () {
 	    function PlaylistFetcher(accessToken, channelId, clock, options) {
@@ -521,7 +506,6 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
-	Object.defineProperty(exports, "__esModule", { value: true });
 	var Playlist_1 = __webpack_require__(6);
 	var PlaylistResolver = (function () {
 	    function PlaylistResolver(accessToken, playlistRaw) {
@@ -593,7 +577,6 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
-	Object.defineProperty(exports, "__esModule", { value: true });
 	var Track_1 = __webpack_require__(7);
 	var Playlist = (function () {
 	    function Playlist(tracks) {
@@ -636,17 +619,11 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
-	var __extends = (this && this.__extends) || (function () {
-	    var extendStatics = Object.setPrototypeOf ||
-	        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-	        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-	    return function (d, b) {
-	        extendStatics(d, b);
-	        function __() { this.constructor = d; }
-	        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-	    };
-	})();
-	Object.defineProperty(exports, "__esModule", { value: true });
+	var __extends = (this && this.__extends) || function (d, b) {
+	    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+	    function __() { this.constructor = d; }
+	    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+	};
 	var Base_1 = __webpack_require__(2);
 	var TrackInfo_1 = __webpack_require__(8);
 	var Track = (function (_super) {
@@ -767,7 +744,6 @@
 /***/ function(module, exports) {
 
 	"use strict";
-	Object.defineProperty(exports, "__esModule", { value: true });
 	var TrackInfo = (function () {
 	    function TrackInfo(name, metadata) {
 	        this.__name = name;
@@ -806,17 +782,11 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
-	var __extends = (this && this.__extends) || (function () {
-	    var extendStatics = Object.setPrototypeOf ||
-	        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-	        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-	    return function (d, b) {
-	        extendStatics(d, b);
-	        function __() { this.constructor = d; }
-	        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-	    };
-	})();
-	Object.defineProperty(exports, "__esModule", { value: true });
+	var __extends = (this && this.__extends) || function (d, b) {
+	    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+	    function __() { this.constructor = d; }
+	    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+	};
 	var Factory_1 = __webpack_require__(10);
 	var Base_1 = __webpack_require__(2);
 	var AudioManager = (function (_super) {
@@ -913,7 +883,6 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
-	Object.defineProperty(exports, "__esModule", { value: true });
 	var HTMLPlayer_1 = __webpack_require__(11);
 	var Factory = (function () {
 	    function Factory() {
@@ -931,17 +900,11 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
-	var __extends = (this && this.__extends) || (function () {
-	    var extendStatics = Object.setPrototypeOf ||
-	        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-	        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-	    return function (d, b) {
-	        extendStatics(d, b);
-	        function __() { this.constructor = d; }
-	        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-	    };
-	})();
-	Object.defineProperty(exports, "__esModule", { value: true });
+	var __extends = (this && this.__extends) || function (d, b) {
+	    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+	    function __() { this.constructor = d; }
+	    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+	};
 	var Base_1 = __webpack_require__(2);
 	var FADE_OUT_INTERVAL = 25;
 	var HTMLPlayer = (function (_super) {
@@ -1180,17 +1143,11 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
-	var __extends = (this && this.__extends) || (function () {
-	    var extendStatics = Object.setPrototypeOf ||
-	        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-	        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-	    return function (d, b) {
-	        extendStatics(d, b);
-	        function __() { this.constructor = d; }
-	        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-	    };
-	})();
-	Object.defineProperty(exports, "__esModule", { value: true });
+	var __extends = (this && this.__extends) || function (d, b) {
+	    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+	    function __() { this.constructor = d; }
+	    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+	};
 	var Base_1 = __webpack_require__(2);
 	var phoenix_1 = __webpack_require__(13);
 	var StreamManager = (function (_super) {
@@ -1247,12 +1204,15 @@
 	        this.__scheduleRestart();
 	    };
 	    StreamManager.prototype.__onAudioEnded = function (e) {
-	        this.debug('EOS');
+	        this.warn('EOS');
 	        this.__stopPlayback();
 	        this.__scheduleRestart();
 	    };
 	    StreamManager.prototype.__onAudioWaiting = function (e) {
 	        this.warn('Waiting');
+	    };
+	    StreamManager.prototype.__onAudioPlaying = function (e) {
+	        this.debug('Playing');
 	    };
 	    StreamManager.prototype.__onAudioStalled = function (e) {
 	        this.warn('Stalled');
@@ -1293,8 +1253,8 @@
 	        this.__audio.onwaiting = this.__onAudioWaiting.bind(this);
 	        this.__audio.onstalled = this.__onAudioStalled.bind(this);
 	        this.__audio.onsuspend = this.__onAudioSuspended.bind(this);
+	        this.__audio.onplaying = this.__onAudioPlaying.bind(this);
 	        this.__audio.play();
-	        this._trigger('playback-started');
 	    };
 	    StreamManager.prototype.__stopPlayback = function () {
 	        this.debug('Stopping playback');
@@ -1304,6 +1264,7 @@
 	            this.__audio.onwaiting = undefined;
 	            this.__audio.onstalled = undefined;
 	            this.__audio.onsuspend = undefined;
+	            this.__audio.onplaying = undefined;
 	            if (this.__audio.readyState == 4) {
 	                this.__audio.pause();
 	            }
