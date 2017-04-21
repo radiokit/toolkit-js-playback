@@ -1,6 +1,6 @@
 {
   "name": "radiokit-toolkit-playback",
-  "version": "3.1.0",
+  "version": "3.1.1",
   "description": "RadioKit Toolkit for playing back audio content",
   "main": "lib/index.js",
   "scripts": {
