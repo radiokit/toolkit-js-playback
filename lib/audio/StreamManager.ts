@@ -99,6 +99,7 @@ export class StreamManager extends Base {
 
   private __onAudioPlaying(e) : void {
     this.debug('Playing');
+    this._trigger('playback-started');
   }
 
 
