@@ -55,12 +55,21 @@ export class Player extends Base {
       this.__started = true;
       this.__playbackStartedEmitted = false;
 
-      this.debug("Using StreamManager");
-      this.__streamManager = new StreamManager(this.__channelId);
-      this.__streamManager.setVolume(this.__volume);
-      this.__streamManager.on('channel-metadata-update', this.__onStreamManagerChannelMetadataUpdate.bind(this));
-      this.__streamManager.on('playback-started', this.__onStreamManagerPlaybackStarted.bind(this));
-      this.__streamManager.start();
+      if(this.__supportsAudioManager()) {
+        this.debug("Using AudioManager");
+        this.__audioManager = new AudioManager();
+        this.__audioManager.setVolume(this.__volume);
+        this.__audioManager.on('playback-started', this.__onAudioManagerPlaybackStarted.bind(this));
+        this.__audioManager.on('position', this.__onAudioManagerPosition.bind(this));
+
+      } else {
+        this.debug("Using StreamManager");
+        this.__streamManager = new StreamManager(this.__channelId);
+        this.__streamManager.setVolume(this.__volume);
+        this.__streamManager.on('channel-metadata-update', this.__onStreamManagerChannelMetadataUpdate.bind(this));
+        this.__streamManager.on('playback-started', this.__onStreamManagerPlaybackStarted.bind(this));
+        this.__streamManager.start();
+      }
     }
 
     return this;
