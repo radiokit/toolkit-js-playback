@@ -112,7 +112,7 @@
 	            this.__startFetching();
 	            this.__started = true;
 	            this.__playbackStartedEmitted = false;
-	            if (this.__supportsAudioManager()) {
+	            if (this.supportsAudioManager()) {
 	                this.debug("Using AudioManager");
 	                this.__audioManager = new AudioManager_1.AudioManager();
 	                this.__audioManager.setVolume(this.__volume);
@@ -178,13 +178,13 @@
 	            }
 	        }
 	    };
-	    Player.prototype._loggerTag = function () {
-	        return this['constructor']['name'] + " " + this.__channelId;
-	    };
-	    Player.prototype.__supportsAudioManager = function () {
+	    Player.prototype.supportsAudioManager = function () {
 	        return (!this.__isAndroid() &&
 	            !this.__isIPhone() &&
 	            !this.__isSafari());
+	    };
+	    Player.prototype._loggerTag = function () {
+	        return this['constructor']['name'] + " " + this.__channelId;
 	    };
 	    Player.prototype.__isAndroid = function () {
 	        return navigator.userAgent.indexOf('Android') !== -1;
