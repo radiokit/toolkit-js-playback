@@ -154,12 +154,12 @@ export class HTMLPlayer extends Base implements IAudioPlayer {
   }
 
 
-  private __onAudioCanPlayThroughWhenPreparing(e) : void {
+  private __onAudioCanPlayWhenPreparing(e) : void {
     this.debug('Can play through (when preparing)');
 
     // Adjust the currentTime. Seek takes some time, sometimes even a few seconds
     // so previously set currentTime may be obsolete. We recompute it again
-    // but now seeking should be faster as most probably after canplaythrough
+    // but now seeking should be faster as most probably after canplay
     // event was emitted we have some bufferred data.
     const now = this.__clock.nowAsTimestamp();
     const cueInAt = this.__track.getCueInAt().valueOf();
@@ -185,13 +185,13 @@ export class HTMLPlayer extends Base implements IAudioPlayer {
 
         // Replace event handler. It will be triggered again if we update
         // currentTime in the subsequent code.
-        this.__audio.oncanplaythrough = this.__onAudioCanPlayThroughWhenReady.bind(this);
+        this.__audio.oncanplay = this.__onAudioCanPlayWhenReady.bind(this);
 
         // Compute new position
         const position = now - cueInAt;
         this.debug(`Seeking to ${position} ms`);
 
-        // Set new position, this will cause to emit canplaythrough event again
+        // Set new position, this will cause to emit canplay event again
         // when seeking is done.
         this.__audio.currentTime = position / 1000.0;
 
@@ -203,7 +203,7 @@ export class HTMLPlayer extends Base implements IAudioPlayer {
   }
 
 
-  private __onAudioCanPlayThroughWhenReady(e) : void {
+  private __onAudioCanPlayWhenReady(e) : void {
     this.debug('Can play through (when ready)');
     this.__startPlayback();
   }
@@ -296,9 +296,9 @@ export class HTMLPlayer extends Base implements IAudioPlayer {
       }
     }
 
-    // Set event handlers. Remember that canplaythrough is emitted also on
+    // Set event handlers. Remember that canplay is emitted also on
     // setting currentTime so it has to be bound after currentTime is valid.
-    this.__audio.oncanplaythrough = this.__onAudioCanPlayThroughWhenPreparing.bind(this);
+    this.__audio.oncanplay = this.__onAudioCanPlayWhenPreparing.bind(this);
     this.__audio.onerror = this.__onAudioError.bind(this);
 
     // Cause audio to load
@@ -323,7 +323,7 @@ export class HTMLPlayer extends Base implements IAudioPlayer {
   private __stopPlayback() : void {
     this.debug('Stopping playback');
     if(this.__audio) {
-      this.__audio.oncanplaythrough = undefined;
+      this.__audio.oncanplay = undefined;
       this.__audio.onerror = undefined;
       this.__audio.onended = undefined;
       this.__audio.onwaiting = undefined;
