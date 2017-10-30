@@ -42,26 +42,29 @@
 /************************************************************************/
 /******/ ([
 /* 0 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	"use strict";
 	Object.defineProperty(exports, "__esModule", { value: true });
 	var Player_1 = __webpack_require__(1);
+	var Setup_1 = __webpack_require__(14);
 	exports.Channel = {
 	    Player: Player_1.Player,
+	    Setup: Setup_1.Setup,
 	};
 	if (typeof (window) !== "undefined") {
 	    window['RadioKitToolkitPlayback'] = {
 	        Channel: {
 	            Player: Player_1.Player,
+	            Setup: Setup_1.Setup,
 	        }
 	    };
 	}
 
 
-/***/ },
+/***/ }),
 /* 1 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	"use strict";
 	var __extends = (this && this.__extends) || (function () {
@@ -90,7 +93,7 @@
 	var StreamManager_1 = __webpack_require__(12);
 	var Player = (function (_super) {
 	    __extends(Player, _super);
-	    function Player(channelId, accessToken, options) {
+	    function Player(setup, accessToken, options) {
 	        if (options === void 0) { options = {}; }
 	        var _this = _super.call(this) || this;
 	        _this.__fetchTimeoutId = 0;
@@ -103,7 +106,7 @@
 	        _this.__options = { from: 20, to: 600 };
 	        _this.__options = __assign({}, _this.__options, options);
 	        _this.__started = false;
-	        _this.__channelId = channelId;
+	        _this.__setup = setup;
 	        _this.__accessToken = accessToken;
 	        return _this;
 	    }
@@ -121,7 +124,7 @@
 	            }
 	            else {
 	                this.debug("Using StreamManager");
-	                this.__streamManager = new StreamManager_1.StreamManager(this.__channelId);
+	                this.__streamManager = new StreamManager_1.StreamManager(this.__setup);
 	                this.__streamManager.setVolume(this.__volume);
 	                this.__streamManager.on('channel-metadata-update', this.__onStreamManagerChannelMetadataUpdate.bind(this));
 	                this.__streamManager.on('playback-started', this.__onStreamManagerPlaybackStarted.bind(this));
@@ -184,7 +187,7 @@
 	            !this.__isSafari());
 	    };
 	    Player.prototype._loggerTag = function () {
-	        return this['constructor']['name'] + " " + this.__channelId;
+	        return this['constructor']['name'] + " " + this.__setup.getChannelId();
 	    };
 	    Player.prototype.__isAndroid = function () {
 	        return navigator.userAgent.indexOf('Android') !== -1;
@@ -210,7 +213,7 @@
 	                    .then(function (clock) {
 	                    _this.debug("Fetch: Synchronized clock");
 	                    _this.__clock = clock;
-	                    _this.__playlistFetcher = new PlaylistFetcher_1.PlaylistFetcher(_this.__accessToken, _this.__channelId, clock, { from: _this.__options.from, to: _this.__options.to });
+	                    _this.__playlistFetcher = new PlaylistFetcher_1.PlaylistFetcher(_this.__accessToken, _this.__setup, clock, { from: _this.__options.from, to: _this.__options.to });
 	                    return _this.__fetchPlaylist(resolve, reject);
 	                })
 	                    .catch(function (error) {
@@ -293,9 +296,9 @@
 	exports.Player = Player;
 
 
-/***/ },
+/***/ }),
 /* 2 */
-/***/ function(module, exports) {
+/***/ (function(module, exports) {
 
 	"use strict";
 	Object.defineProperty(exports, "__esModule", { value: true });
@@ -368,9 +371,9 @@
 	exports.Base = Base;
 
 
-/***/ },
+/***/ }),
 /* 3 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	"use strict";
 	var __extends = (this && this.__extends) || (function () {
@@ -433,9 +436,9 @@
 	exports.SyncClock = SyncClock;
 
 
-/***/ },
+/***/ }),
 /* 4 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	"use strict";
 	var __assign = (this && this.__assign) || Object.assign || function(t) {
@@ -449,12 +452,12 @@
 	Object.defineProperty(exports, "__esModule", { value: true });
 	var PlaylistResolver_1 = __webpack_require__(5);
 	var PlaylistFetcher = (function () {
-	    function PlaylistFetcher(accessToken, channelId, clock, options) {
+	    function PlaylistFetcher(accessToken, setup, clock, options) {
 	        if (options === void 0) { options = {}; }
 	        this.__options = { from: 20, to: 600 };
 	        this.__options = __assign({}, this.__options, options);
 	        this.__clock = clock;
-	        this.__channelId = channelId;
+	        this.__setup = setup;
 	        this.__accessToken = accessToken;
 	    }
 	    PlaylistFetcher.prototype.fetchAsync = function () {
@@ -462,19 +465,7 @@
 	        var promise = new Promise(function (resolve, reject) {
 	            var now = _this.__clock.nowAsTimestamp();
 	            var xhr = new XMLHttpRequest();
-	            var url = 'https://plumber.radiokitapp.org/api/rest/v1.0/media/input/file/radiokit/vault' +
-	                '?a[]=id' +
-	                '&a[]=name' +
-	                '&a[]=file' +
-	                '&a[]=cue_in_at' +
-	                '&a[]=cue_out_at' +
-	                '&a[]=cue_offset' +
-	                '&a[]=fade_in_at' +
-	                '&a[]=fade_out_at' +
-	                '&s[]=cue%20' + encodeURIComponent(new Date(now).toISOString()) +
-	                encodeURIComponent(" " + _this.__options.from + " " + _this.__options.to) +
-	                '&c[references][]=deq%20broadcast_channel_id%20' + encodeURIComponent(_this.__channelId) +
-	                '&o[]=cue_in_at%20asc';
+	            var url = _this.__setup.getLineupPlaylistUrl('current-15s');
 	            xhr.open('GET', url, true);
 	            xhr.setRequestHeader('Cache-Control', 'no-cache, must-revalidate');
 	            xhr.setRequestHeader('Authorization', "Bearer " + _this.__accessToken);
@@ -493,7 +484,7 @@
 	                if (xhr.readyState === 4) {
 	                    if (xhr.status === 200) {
 	                        var responseAsJson = JSON.parse(xhr.responseText);
-	                        var resolver = new PlaylistResolver_1.PlaylistResolver(_this.__accessToken, responseAsJson['data']);
+	                        var resolver = new PlaylistResolver_1.PlaylistResolver(_this.__accessToken, responseAsJson['data']['playlist']['tracks']);
 	                        resolver.resolveAsync()
 	                            .then(function (playlist) {
 	                            resolve(playlist);
@@ -516,9 +507,9 @@
 	exports.PlaylistFetcher = PlaylistFetcher;
 
 
-/***/ },
+/***/ }),
 /* 5 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	"use strict";
 	Object.defineProperty(exports, "__esModule", { value: true });
@@ -534,8 +525,8 @@
 	            var xhr = new XMLHttpRequest();
 	            var fileIds = [];
 	            for (var _i = 0, _a = _this.__playlistRaw; _i < _a.length; _i++) {
-	                var file = _a[_i];
-	                fileIds.push(encodeURIComponent(file["file"]));
+	                var track = _a[_i];
+	                fileIds.push(encodeURIComponent(track["file"]["id"]));
 	            }
 	            var url = 'https://vault.radiokitapp.org/api/rest/v1.0/data/record/file' +
 	                '?a[]=id' +
@@ -588,9 +579,9 @@
 	exports.PlaylistResolver = PlaylistResolver;
 
 
-/***/ },
+/***/ }),
 /* 6 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	"use strict";
 	Object.defineProperty(exports, "__esModule", { value: true });
@@ -604,11 +595,11 @@
 	        for (var _i = 0, playlistRaw_1 = playlistRaw; _i < playlistRaw_1.length; _i++) {
 	            var playlistRecord = playlistRaw_1[_i];
 	            var id = playlistRecord['id'];
-	            var fileId = playlistRecord['file'];
+	            var fileId = playlistRecord['file']['id'];
 	            var fileUrl = void 0;
 	            for (var _a = 0, filesRaw_1 = filesRaw; _a < filesRaw_1.length; _a++) {
 	                var fileRecord = filesRaw_1[_a];
-	                if (fileRecord['id'] === playlistRecord['file']) {
+	                if (fileRecord['id'] === fileId) {
 	                    fileUrl = fileRecord['public_url'];
 	                    break;
 	                }
@@ -631,9 +622,9 @@
 	exports.Playlist = Playlist;
 
 
-/***/ },
+/***/ }),
 /* 7 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	"use strict";
 	var __extends = (this && this.__extends) || (function () {
@@ -762,9 +753,9 @@
 	exports.Track = Track;
 
 
-/***/ },
+/***/ }),
 /* 8 */
-/***/ function(module, exports) {
+/***/ (function(module, exports) {
 
 	"use strict";
 	Object.defineProperty(exports, "__esModule", { value: true });
@@ -801,9 +792,9 @@
 	exports.TrackInfo = TrackInfo;
 
 
-/***/ },
+/***/ }),
 /* 9 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	"use strict";
 	var __extends = (this && this.__extends) || (function () {
@@ -908,9 +899,9 @@
 	exports.AudioManager = AudioManager;
 
 
-/***/ },
+/***/ }),
 /* 10 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	"use strict";
 	Object.defineProperty(exports, "__esModule", { value: true });
@@ -926,9 +917,9 @@
 	exports.Factory = Factory;
 
 
-/***/ },
+/***/ }),
 /* 11 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	"use strict";
 	var __extends = (this && this.__extends) || (function () {
@@ -1018,7 +1009,7 @@
 	    HTMLPlayer.prototype._loggerTag = function () {
 	        return this['constructor']['name'] + " " + this.__track.getId();
 	    };
-	    HTMLPlayer.prototype.__onAudioCanPlayThroughWhenPreparing = function (e) {
+	    HTMLPlayer.prototype.__onAudioCanPlayWhenPreparing = function (e) {
 	        this.debug('Can play through (when preparing)');
 	        var now = this.__clock.nowAsTimestamp();
 	        var cueInAt = this.__track.getCueInAt().valueOf();
@@ -1033,7 +1024,7 @@
 	                this.__cueInTimeoutId = setTimeout(this.__onCueInTimeout.bind(this), timeout);
 	            }
 	            else if (now > cueInAt) {
-	                this.__audio.oncanplaythrough = this.__onAudioCanPlayThroughWhenReady.bind(this);
+	                this.__audio.oncanplay = this.__onAudioCanPlayWhenReady.bind(this);
 	                var position = now - cueInAt;
 	                this.debug("Seeking to " + position + " ms");
 	                this.__audio.currentTime = position / 1000.0;
@@ -1043,7 +1034,7 @@
 	            }
 	        }
 	    };
-	    HTMLPlayer.prototype.__onAudioCanPlayThroughWhenReady = function (e) {
+	    HTMLPlayer.prototype.__onAudioCanPlayWhenReady = function (e) {
 	        this.debug('Can play through (when ready)');
 	        this.__startPlayback();
 	    };
@@ -1101,7 +1092,7 @@
 	                this.__audio.currentTime = position / 1000.0;
 	            }
 	        }
-	        this.__audio.oncanplaythrough = this.__onAudioCanPlayThroughWhenPreparing.bind(this);
+	        this.__audio.oncanplay = this.__onAudioCanPlayWhenPreparing.bind(this);
 	        this.__audio.onerror = this.__onAudioError.bind(this);
 	        this.__audio.load();
 	    };
@@ -1118,7 +1109,7 @@
 	    HTMLPlayer.prototype.__stopPlayback = function () {
 	        this.debug('Stopping playback');
 	        if (this.__audio) {
-	            this.__audio.oncanplaythrough = undefined;
+	            this.__audio.oncanplay = undefined;
 	            this.__audio.onerror = undefined;
 	            this.__audio.onended = undefined;
 	            this.__audio.onwaiting = undefined;
@@ -1175,9 +1166,9 @@
 	exports.HTMLPlayer = HTMLPlayer;
 
 
-/***/ },
+/***/ }),
 /* 12 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	"use strict";
 	var __extends = (this && this.__extends) || (function () {
@@ -1195,12 +1186,12 @@
 	var phoenix_1 = __webpack_require__(13);
 	var StreamManager = (function (_super) {
 	    __extends(StreamManager, _super);
-	    function StreamManager(channelId) {
+	    function StreamManager(setup) {
 	        var _this = _super.call(this) || this;
 	        _this.__volume = 1.0;
 	        _this.__started = false;
 	        _this.__restartTimeoutId = 0;
-	        _this.__channelId = channelId;
+	        _this.__setup = setup;
 	        _this.__socket = new phoenix_1.Socket("wss://agenda.radiokitapp.org/api/stream/v1.0");
 	        return _this;
 	    }
@@ -1267,7 +1258,7 @@
 	    StreamManager.prototype.__subscribeMetadata = function () {
 	        var _this = this;
 	        this.__socket.connect();
-	        this.__channel = this.__socket.channel("broadcast:metadata:" + this.__channelId);
+	        this.__channel = this.__socket.channel("broadcast:metadata:" + this.__setup.getChannelId());
 	        this.__channel.on("update", function (payload) {
 	            _this.debug("Received metadata: payload = " + JSON.stringify(payload));
 	            _this._trigger("channel-metadata-update", payload);
@@ -1291,7 +1282,7 @@
 	        this.debug('Starting playback');
 	        this.__audio = new Audio();
 	        this.__audio.volume = this.__volume;
-	        this.__audio.src = "http://cluster.radiokitstream.org/" + encodeURIComponent(this.__channelId) + ".mp3";
+	        this.__audio.src = this.__setup.getTubeStreamUrl();
 	        this.__audio.onerror = this.__onAudioError.bind(this);
 	        this.__audio.onended = this.__onAudioEnded.bind(this);
 	        this.__audio.onwaiting = this.__onAudioWaiting.bind(this);
@@ -1337,9 +1328,9 @@
 	exports.StreamManager = StreamManager;
 
 
-/***/ },
+/***/ }),
 /* 13 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	(function(exports){
 	"use strict";
@@ -2614,6 +2605,53 @@
 	
 
 
-/***/ }
+/***/ }),
+/* 14 */
+/***/ (function(module, exports) {
+
+	"use strict";
+	Object.defineProperty(exports, "__esModule", { value: true });
+	var Setup = (function () {
+	    function Setup(channelId, lineupBaseUrl, lineupChannelId, tubeBaseUrl, tubeFormat, tubeBitrate) {
+	        if (tubeFormat !== 'mp3') {
+	            throw new Error("Unknown tubeFormat " + tubeFormat);
+	        }
+	        this.__channelId = channelId;
+	        this.__lineupBaseUrl = lineupBaseUrl;
+	        this.__lineupChannelId = lineupChannelId;
+	        this.__tubeBaseUrl = tubeBaseUrl;
+	        this.__tubeFormat = tubeFormat;
+	        this.__tubeBitrate = tubeBitrate;
+	    }
+	    Setup.prototype.getChannelId = function () {
+	        return this.__channelId;
+	    };
+	    Setup.prototype.getLineupBaseUrl = function () {
+	        return this.__lineupBaseUrl;
+	    };
+	    Setup.prototype.getLineupChannelId = function () {
+	        return this.__lineupChannelId;
+	    };
+	    Setup.prototype.getTubeBaseUrl = function () {
+	        return this.__tubeBaseUrl;
+	    };
+	    Setup.prototype.getTubeFormat = function () {
+	        return this.__tubeFormat;
+	    };
+	    Setup.prototype.getTubeBitrate = function () {
+	        return this.__tubeBitrate;
+	    };
+	    Setup.prototype.getLineupPlaylistUrl = function (scope) {
+	        return this.__lineupBaseUrl + "/api/lineup/v1.0/channel/" + encodeURIComponent(this.__lineupChannelId) + "/playlist?scope=" + encodeURIComponent(scope);
+	    };
+	    Setup.prototype.getTubeStreamUrl = function () {
+	        return this.__tubeBaseUrl + "/output-" + this.__tubeBitrate + "." + this.__tubeFormat;
+	    };
+	    return Setup;
+	}());
+	exports.Setup = Setup;
+
+
+/***/ })
 /******/ ]);
 //# sourceMappingURL=radiokit-toolkit-playback.js.map

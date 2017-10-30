@@ -8,7 +8,16 @@
 
   <script>
   function init() {
-    window.player = new RadioKitToolkitPlayback.Channel.Player("fd9a7d1c-a387-40a0-b876-2799668d6f9d", "123");
+    window.setup = new RadioKitToolkitPlayback.Channel.Setup(
+      "066dd3c9-a8cc-45bb-92a6-66e8d48e2227",
+      "https://lineup-traxvibes.radiokitapp.org",
+      "detroittechno",
+      "http://tube-traxvibes-detroittechno.radiokitapp.org",
+      "mp3",
+      192
+    );
+
+    window.player = new RadioKitToolkitPlayback.Channel.Player(window.setup, "123");
     window.player.on('track-playback-started', function(track) {
       document.getElementById('track-id').innerHTML = 'TRACK ID: ' + track.getId();
 
@@ -52,11 +61,21 @@
     });
 
     window.player.on('playlist-fetched', function(playlist) {
-      var tracks = Object.keys(playlist.getTracks());
-      var tracksHTML = "<div>PLAY LIST:</div><br />";
-      for (var i = 0; i < tracks.length; i++) {
-        tracksHTML += "<div>" + tracks[i] + "</div>";
+      var tracks = playlist.getTracks();
+      var tracksIds = Object.keys(tracks);
+      var tracksHTML = "<div>PLAY LIST:</div><ul>";
+      for (var i = 0; i < tracksIds.length; i++) {
+        var track = tracks[tracksIds[i]];
+
+        var trackFileId = track.getFileId();
+        var trackCueInAt = track.getCueInAt();
+        var trackCueOutAt = track.getCueOutAt();
+
+        tracksHTML += "<li>" + tracksIds[i] + ": " + trackFileId + " / " + trackCueInAt + " / " + trackCueOutAt + "</li>";
       }
+
+      tracksHTML += "</ul>";
+
       document.getElementById('playlist').innerHTML = tracksHTML;
     });
   }

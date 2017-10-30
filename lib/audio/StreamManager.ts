@@ -1,4 +1,5 @@
 import { Base } from '../Base';
+import { Setup } from '../Channel/Setup';
 import { Socket, Channel } from 'phoenix';
 
 
@@ -10,17 +11,17 @@ import { Socket, Channel } from 'phoenix';
 export class StreamManager extends Base {
   private __volume:           number = 1.0;
   private __audio:            HTMLAudioElement;
-  private __channelId:        string;
+  private __setup:            Setup;
   private __started:          boolean = false;
   private __restartTimeoutId: number = 0;
   private __socket:           Socket;
   private __channel:          Channel;
 
 
-  constructor(channelId: string) {
+  constructor(setup: Setup) {
     super();
 
-    this.__channelId = channelId;
+    this.__setup = setup;
     this.__socket = new Socket("wss://agenda.radiokitapp.org/api/stream/v1.0");
   }
 
@@ -115,7 +116,7 @@ export class StreamManager extends Base {
 
   private __subscribeMetadata() : void {
     this.__socket.connect();
-    this.__channel = this.__socket.channel(`broadcast:metadata:${this.__channelId}`);
+    this.__channel = this.__socket.channel(`broadcast:metadata:${this.__setup.getChannelId()}`);
     this.__channel.on("update", payload => {
       this.debug("Received metadata: payload = " + JSON.stringify(payload));
       this._trigger("channel-metadata-update", payload);
@@ -144,7 +145,7 @@ export class StreamManager extends Base {
     // Do not disable preloading - it causes issues on Safari
 
     // Get URL from the playlist
-    this.__audio.src = `http://cluster.radiokitstream.org/${encodeURIComponent(this.__channelId)}.mp3`;
+    this.__audio.src = this.__setup.getTubeStreamUrl();
 
     // Set callbacks
     this.__audio.onerror = this.__onAudioError.bind(this);

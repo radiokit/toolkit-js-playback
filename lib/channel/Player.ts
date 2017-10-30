@@ -1,3 +1,4 @@
+import { Setup } from './Setup';
 import { Base } from '../Base';
 import { SyncClock } from '../clock/SyncClock';
 import { Playlist } from '../channel/Playlist';
@@ -20,7 +21,7 @@ import { StreamManager } from '../audio/StreamManager';
  *   when the position is updated for the last track for which playback has started
  */
 export class Player extends Base {
-  private __channelId:              string;
+  private __setup:                  Setup;
   private __accessToken:            string;
   private __fetchTimeoutId:         number = 0;
   private __audioManager:           AudioManager;
@@ -35,7 +36,7 @@ export class Player extends Base {
   private __options:                any = { from: 20, to: 600 };
 
 
-  constructor(channelId: string, accessToken: string, options = {}) {
+  constructor(setup: Setup, accessToken: string, options = {}) {
     super();
 
     this.__options = {
@@ -43,7 +44,7 @@ export class Player extends Base {
       ...options
     }
     this.__started = false;
-    this.__channelId = channelId;
+    this.__setup = setup;
     this.__accessToken = accessToken;
   }
 
@@ -64,7 +65,7 @@ export class Player extends Base {
 
       } else {
         this.debug("Using StreamManager");
-        this.__streamManager = new StreamManager(this.__channelId);
+        this.__streamManager = new StreamManager(this.__setup);
         this.__streamManager.setVolume(this.__volume);
         this.__streamManager.on('channel-metadata-update', this.__onStreamManagerChannelMetadataUpdate.bind(this));
         this.__streamManager.on('playback-started', this.__onStreamManagerPlaybackStarted.bind(this));
@@ -162,7 +163,7 @@ export class Player extends Base {
 
 
   protected _loggerTag() : string {
-    return `${this['constructor']['name']} ${this.__channelId}`;
+    return `${this['constructor']['name']} ${this.__setup.getChannelId()}`;
   }
 
 
@@ -199,7 +200,7 @@ export class Player extends Base {
             this.__clock = clock;
             this.__playlistFetcher = new PlaylistFetcher(
               this.__accessToken,
-              this.__channelId, clock,
+              this.__setup, clock,
               { from: this.__options.from, to: this.__options.to }
             );
 

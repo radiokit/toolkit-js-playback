@@ -23,8 +23,8 @@ export class PlaylistResolver {
       const xhr = new XMLHttpRequest();
 
       const fileIds = [];
-      for(let file of this.__playlistRaw) {
-        fileIds.push(encodeURIComponent(file["file"]));
+      for(let track of this.__playlistRaw) {
+        fileIds.push(encodeURIComponent(track["file"]["id"])); 
       }
 
       const url = 'https://vault.radiokitapp.org/api/rest/v1.0/data/record/file' +

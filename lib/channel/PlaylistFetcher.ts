@@ -1,3 +1,4 @@
+import { Setup } from './Setup';
 import { SyncClock } from '../clock/SyncClock';
 import { Track } from './Track';
 import { Playlist } from './Playlist';
@@ -11,17 +12,17 @@ import { PlaylistResolver } from './PlaylistResolver';
 export class PlaylistFetcher {
   private __options: any = { from: 20, to: 600 };
   private __clock: SyncClock;
-  private __channelId: string;
+  private __setup: Setup;
   private __accessToken: string;
 
 
-  constructor(accessToken: string, channelId: string, clock: SyncClock, options = {}) {
+  constructor(accessToken: string, setup: Setup, clock: SyncClock, options = {}) {
     this.__options = {
       ...this.__options,
       ...options,
     }
     this.__clock = clock;
-    this.__channelId = channelId;
+    this.__setup = setup;
     this.__accessToken = accessToken;
   }
 
@@ -34,20 +35,7 @@ export class PlaylistFetcher {
       const now = this.__clock.nowAsTimestamp();
       const xhr = new XMLHttpRequest();
 
-      const url = 'https://plumber.radiokitapp.org/api/rest/v1.0/media/input/file/radiokit/vault' +
-        '?a[]=id' +
-        '&a[]=name' +
-        '&a[]=file' +
-        '&a[]=cue_in_at' +
-        '&a[]=cue_out_at' +
-        '&a[]=cue_offset' +
-        '&a[]=fade_in_at' +
-        '&a[]=fade_out_at' +
-        '&s[]=cue%20' + encodeURIComponent(new Date(now).toISOString()) +
-                        encodeURIComponent(` ${this.__options.from} ${this.__options.to}`) + // seek 20 seconds back, 600 seconds forward
-        '&c[references][]=deq%20broadcast_channel_id%20' + encodeURIComponent(this.__channelId) +
-        '&o[]=cue_in_at%20asc';
-
+      const url = this.__setup.getLineupPlaylistUrl('current-15s');
 
       xhr.open('GET', url, true);
       xhr.setRequestHeader('Cache-Control', 'no-cache, must-revalidate');
@@ -71,7 +59,7 @@ export class PlaylistFetcher {
         if(xhr.readyState === 4) {
           if(xhr.status === 200) {
             const responseAsJson = JSON.parse(xhr.responseText);
-            const resolver = new PlaylistResolver(this.__accessToken, responseAsJson['data']);
+            const resolver = new PlaylistResolver(this.__accessToken, responseAsJson['data']['playlist']['tracks']);
 
             resolver.resolveAsync()
               .then((playlist) => {

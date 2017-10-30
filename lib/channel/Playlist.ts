@@ -18,11 +18,11 @@ export class Playlist {
 
     for(let playlistRecord of playlistRaw) {
       let id          : string       = playlistRecord['id'];
-      let fileId      : string       = playlistRecord['file'];
+      let fileId      : string       = playlistRecord['file']['id'];
       let fileUrl     : string;
 
       for(let fileRecord of filesRaw) {
-        if(fileRecord['id'] === playlistRecord['file']) {
+        if(fileRecord['id'] === fileId) {
           fileUrl = fileRecord['public_url'];
           break;
         }
